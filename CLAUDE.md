@@ -21,7 +21,7 @@ No build step, no dependencies, no framework — plain HTML/CSS/JS in one file.
 **Single IIFE in a `<script>` tag.** Three independent data domains, each with its
 own load/persist/render cycle:
 - `tasks` + `milestones` — the Gantt chart (finance/search/legal/adhoc lanes)
-- `properties` — viewing tracker cards (schools, status, photos, video)
+- `properties` — viewing tracker cards (schools, status, photos)
 - `todos` — simple checklist
 
 **Persistence:** `window.storage.get/set(key, value, shared=false)`. This API only
@@ -56,23 +56,33 @@ Full source citations and methodology live in `UK_School_Performance_Database.xl
 (the standalone deliverable this was built from — not deployed, just a reference).
 
 Each property has a `postcode` field (own form input, separate from the free-text
-`address`). On add/edit, `ensurePropertySchools` geocodes it via `postcodes.io`
-(free, no key, CORS-friendly), computes Haversine distance against every row in
-`SCHOOLS_DB`, and caches the nearest 5 primary + 5 secondary onto
-`p.nearestSchools`. `backfillAllPropertySchools` runs the same thing for existing
-properties on load and after a Drive sync merge — it tries to extract a postcode
-from `address` via regex if `p.postcode` is blank. Two sortable tables (primary
-above secondary) render in a `.prop-schools-panel` beside the card, inside a
-`.prop-row` flex container — replaced the old `.props-grid` card-only layout.
+`address`). On add/edit, `ensurePropertySchools` resolves a location for the
+property in priority order: (1) the entered `postcode`, geocoded via `postcodes.io`;
+(2) failing that, a full postcode extracted from `address` via regex; (3) failing
+that, the whole `address` string sent to Nominatim (OpenStreetMap's free geocoder)
+to handle partial Rightmove/Zoopla-style addresses like "Mithras Gardens, Wavendon
+Gate, Milton Keynes MK7" that only carry an outward code. Whatever postcode gets
+resolved from (2) or (3) is written back into `p.postcode` with `p.postcodeGuessed
+= true`, shown to the user as a small "auto-detected" note, and cleared back to
+`false` the next time they save the edit form (whether or not they changed it) —
+that's what "confirms" a guess. Nominatim calls are serialized through
+`queueNominatim` with a ~1.1s gap between them to respect its usage policy; this
+matters most during `backfillAllPropertySchools`, which does the same resolution
+for every existing property on load and after a Drive sync merge. Changing
+`p.postcode` (confirming or correcting a guess) always invalidates and recomputes
+`p.nearestSchools` — the cache key is the resolved postcode string. Two sortable
+tables (primary above secondary) render in a `.prop-schools-panel` beside the
+card, inside a `.prop-row` flex container — replaced the old `.props-grid`
+card-only layout.
 
 This replaced an earlier, deliberately-manual Snobe.co.uk-based design (Snobe's ToS
 prohibits automated scraping of their rankings). The DfE data above is a different,
 openly-licensed source, so that restriction doesn't apply here — but the Snobe ToS
 restriction itself still stands if anyone ever proposes pulling from Snobe directly.
 
-**Property statuses:** Viewing Scheduled / Viewing Complete / Offer Made /
-Offer Rejected / Offer Accepted — a dropdown per property, shown as a colored
-badge.
+**Property statuses:** Property of Interest (default for new entries) / Viewing
+Scheduled / Viewing Complete / Offer Made / Offer Rejected / Offer Accepted —
+a dropdown per property, shown as a colored badge.
 
 ## Deployment
 - Deployed file must be named `index.html` at the repo root (GitHub Pages

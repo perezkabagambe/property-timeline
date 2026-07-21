@@ -196,14 +196,13 @@
   .prop-meta{font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:var(--paper-ink-dim);margin:0;}
   .prop-warning{display:inline-block;font-family:'IBM Plex Mono', monospace;font-size:10.5px;color:#7A2E1B;background:#F0D8C8;padding:3px 6px;border-radius:3px;width:fit-content;}
   .prop-status-badge{display:inline-block;font-family:'IBM Plex Mono', monospace;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;padding:3px 7px;border-radius:3px;width:fit-content;}
+  .prop-status-badge.property-of-interest{background:#EAE3F2;color:#4A2E7A;}
   .prop-status-badge.viewing-scheduled{background:#D9E6F2;color:#1F4E79;}
   .prop-status-badge.viewing-complete{background:#DCEAE1;color:#1F5C3D;}
   .prop-status-badge.offer-made{background:#F5E6C8;color:#7A5B12;}
   .prop-status-badge.offer-rejected{background:#F0D0C8;color:#7A2E1B;}
   .prop-status-badge.offer-accepted{background:#D3E8D0;color:#1F5C1F;}
   .prop-link{font-size:13px;color:#2D5C7A;text-decoration:underline;}
-  .prop-video iframe, .prop-video video{width:100%;border-radius:6px;display:block;aspect-ratio:16/9;}
-  .prop-video a{font-size:12.5px;color:#2D5C7A;}
   .prop-comments-display{font-family:'Source Serif 4', serif;font-size:13.5px;line-height:1.45;color:var(--paper-ink);background:rgba(0,0,0,.045);padding:8px 10px;border-radius:6px;white-space:pre-line;margin:2px 0 0;}
   .prop-actions{display:flex;justify-content:flex-end;gap:8px;}
   .btn-edit{background:none;border:1px solid var(--paper-ink-dim);color:var(--paper-ink);font-family:'IBM Plex Mono', monospace;font-size:11px;padding:5px 10px;border-radius:4px;cursor:pointer;}
@@ -215,6 +214,7 @@
   .near-table th{font-family:'IBM Plex Mono', monospace;font-size:10px;letter-spacing:.03em;text-transform:uppercase;color:var(--paper-ink-dim);cursor:pointer;white-space:nowrap;user-select:none;}
   .near-table th:hover{color:var(--paper-ink);}
   .near-status{font-size:12px;color:var(--paper-ink-dim);font-family:'Source Serif 4', serif;margin:0;}
+  .near-guess-note{font-size:11.5px;color:#7A5B12;background:#F5E6C8;border-radius:5px;padding:6px 9px;margin:0;font-family:'Source Serif 4', serif;}
 
   .todo-section{margin-top:38px;}
   .todo-add-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
@@ -461,7 +461,7 @@
       </div>
       <label class="field-label">Status
         <select id="propStatus">
-          <option value="">—</option>
+          <option value="property-of-interest" selected>Property of Interest</option>
           <option value="viewing-scheduled">Viewing Scheduled</option>
           <option value="viewing-complete">Viewing Complete</option>
           <option value="offer-made">Offer Made</option>
@@ -474,9 +474,6 @@
       </label>
       <label class="field-label">Or upload a photo
         <input type="file" id="propImageFile" accept="image/*">
-      </label>
-      <label class="field-label">Video link (optional)
-        <input type="url" id="propVideo" placeholder="YouTube / Drive / direct video link">
       </label>
       <label class="field-label">Notes
         <textarea id="propComments" rows="3" placeholder="Impressions after the viewing..."></textarea>
@@ -1357,6 +1354,7 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
   const propImageFileInput = document.getElementById('propImageFile');
 
   const STATUS_LABELS = {
+    'property-of-interest': 'Property of Interest',
     'viewing-scheduled': 'Viewing Scheduled',
     'viewing-complete': 'Viewing Complete',
     'offer-made': 'Offer Made',
@@ -1369,6 +1367,7 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
   const geocodeCache = {};   // postcode (no spaces, upper) -> {lat,lon} | null
 
   const UK_POSTCODE_RE = /\b([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})\b/i;
+  const UK_OUTWARD_TRAILING_RE = /\b[A-Z]{1,2}\d[A-Z\d]?\s*$/i;
   function extractPostcode(address){
     const m = (address || '').match(UK_POSTCODE_RE);
     return m ? m[1].toUpperCase().replace(/\s+/g, ' ').trim() : null;
@@ -1397,56 +1396,125 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
     geocodeCache[key] = null;
     return null;
   }
+  async function nearestPostcodeFor(lat, lon){
+    try{
+      const res = await fetch('https://api.postcodes.io/postcodes?lon=' + lon + '&lat=' + lat + '&limit=1');
+      if (res.ok){
+        const data = await res.json();
+        if (data && data.result && data.result[0]) return data.result[0].postcode;
+      }
+    } catch(e){ /* ignore */ }
+    return null;
+  }
+  // Nominatim (OpenStreetMap) is free and CORS-friendly for light client-side use, but its
+  // usage policy asks for max ~1 request/second — this queue serializes calls to respect that,
+  // which matters most during a bulk backfill of several properties at once.
+  let nominatimQueue = Promise.resolve();
+  function queueNominatim(fn){
+    const result = nominatimQueue.then(fn);
+    nominatimQueue = result.catch(() => {}).then(() => new Promise(r => setTimeout(r, 1100)));
+    return result;
+  }
+  async function geocodeFreeText(address){
+    const query = address.replace(UK_OUTWARD_TRAILING_RE, '').replace(/,\s*$/, '').trim() || address;
+    return queueNominatim(async () => {
+      try{
+        const url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&countrycodes=gb&q=' + encodeURIComponent(query);
+        const res = await fetch(url, { headers: { 'Accept-Language': 'en-GB' } });
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (!data || !data.length) return null;
+        const r = data[0];
+        const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
+        let postcode = (r.address && r.address.postcode) ? r.address.postcode.toUpperCase() : null;
+        if (!postcode) postcode = await nearestPostcodeFor(lat, lon);
+        return { lat: lat, lon: lon, postcode: postcode };
+      } catch(e){ return null; }
+    });
+  }
   function nearestFromDb(lat, lon, rows, n){
     return rows
       .map(r => ({ row: r, distance: haversineMiles(lat, lon, r[2], r[3]) }))
       .sort((a, b) => a.distance - b.distance)
       .slice(0, n);
   }
+  function applyNearestSchools(p, postcode, coords, guessed){
+    const nearPrimary = nearestFromDb(coords.lat, coords.lon, window.SCHOOLS_DB.primary, 5);
+    const nearSecondary = nearestFromDb(coords.lat, coords.lon, window.SCHOOLS_DB.secondary, 5);
+    p.postcode = postcode;
+    p.postcodeGuessed = guessed;
+    p.nearestSchools = {
+      postcode: postcode,
+      primary: nearPrimary.map(x => ({ name: x.row[0], rank: x.row[4], ks2: x.row[5], distance: x.distance })),
+      secondary: nearSecondary.map(x => ({ name: x.row[0], rank: x.row[4], progress8: x.row[5], attainment8: x.row[6], distance: x.distance })),
+    };
+  }
   async function ensurePropertySchools(propId){
     const p = properties.find(x => x.id === propId);
     if (!p || !window.SCHOOLS_DB) return;
-    let postcode = (p.postcode || '').trim();
-    if (!postcode){
-      const extracted = extractPostcode(p.address);
-      if (extracted){ postcode = extracted; p.postcode = extracted; }
-    }
-    if (!postcode){
-      p.nearestSchools = null;
+
+    const enteredPostcode = (p.postcode || '').trim();
+    if (enteredPostcode){
+      const normalizedPc = enteredPostcode.toUpperCase().replace(/\s+/g, ' ').trim();
+      if (p.nearestSchools && p.nearestSchools.postcode === normalizedPc && !p.nearestSchools.error) return;
+      p.schoolsLoading = true;
       renderProperties();
-      return;
-    }
-    const normalizedPc = postcode.toUpperCase().replace(/\s+/g, ' ').trim();
-    if (p.nearestSchools && p.nearestSchools.postcode === normalizedPc) return;
-
-    p.schoolsLoading = true;
-    renderProperties();
-
-    const coords = await geocodePostcode(normalizedPc);
-    if (!coords){
+      const coords = await geocodePostcode(normalizedPc);
+      if (!coords){
+        p.schoolsLoading = false;
+        p.nearestSchools = { postcode: normalizedPc, error: true, primary: [], secondary: [] };
+        persistProperties();
+        renderProperties();
+        return;
+      }
+      applyNearestSchools(p, normalizedPc, coords, false);
       p.schoolsLoading = false;
-      p.nearestSchools = { postcode: normalizedPc, error: true, primary: [], secondary: [] };
       persistProperties();
       renderProperties();
       return;
     }
-    const nearPrimary = nearestFromDb(coords.lat, coords.lon, window.SCHOOLS_DB.primary, 5);
-    const nearSecondary = nearestFromDb(coords.lat, coords.lon, window.SCHOOLS_DB.secondary, 5);
-    p.nearestSchools = {
-      postcode: normalizedPc,
-      primary: nearPrimary.map(x => ({ name: x.row[0], rank: x.row[4], ks2: x.row[5], distance: x.distance })),
-      secondary: nearSecondary.map(x => ({ name: x.row[0], rank: x.row[4], progress8: x.row[5], attainment8: x.row[6], distance: x.distance })),
-    };
+
+    // No postcode entered — try to spot a full one already in the free-text address...
+    const extracted = extractPostcode(p.address);
+    if (extracted){
+      p.schoolsLoading = true;
+      renderProperties();
+      const coords = await geocodePostcode(extracted);
+      p.schoolsLoading = false;
+      if (coords){
+        applyNearestSchools(p, extracted, coords, true);
+        persistProperties();
+        renderProperties();
+        return;
+      }
+    }
+
+    // ...otherwise fall back to geocoding the address text itself (handles partial
+    // Rightmove/Zoopla-style addresses like "Mithras Gardens, Wavendon Gate, Milton Keynes MK7").
+    p.schoolsLoading = true;
+    renderProperties();
+    const guess = await geocodeFreeText(p.address);
     p.schoolsLoading = false;
+    if (!guess){
+      p.nearestSchools = { postcode: null, error: true, primary: [], secondary: [] };
+      persistProperties();
+      renderProperties();
+      return;
+    }
+    applyNearestSchools(p, guess.postcode || '', guess, true);
     persistProperties();
     renderProperties();
   }
   function backfillAllPropertySchools(){
     properties.forEach(p => {
-      const postcode = (p.postcode || '').trim() || extractPostcode(p.address);
-      if (!postcode) return;
-      const normalizedPc = postcode.toUpperCase().replace(/\s+/g, ' ').trim();
-      if (p.nearestSchools && p.nearestSchools.postcode === normalizedPc) return;
+      if (p.schoolsLoading) return;
+      const enteredPostcode = (p.postcode || '').trim();
+      if (enteredPostcode){
+        const normalizedPc = enteredPostcode.toUpperCase().replace(/\s+/g, ' ').trim();
+        if (p.nearestSchools && p.nearestSchools.postcode === normalizedPc && !p.nearestSchools.error) return;
+      } else if (p.nearestSchools && !p.nearestSchools.error){
+        return; // already have a best-guess result and nothing's changed
+      }
       ensurePropertySchools(p.id);
     });
   }
@@ -1478,10 +1546,9 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
     const label = type === 'primary' ? 'Nearest primary schools' : 'Nearest secondary schools';
     const open = (html) => '<div class="near-block"><h4>' + label + '</h4>' + html + '</div>';
     if (p.schoolsLoading) return open('<p class="near-status">Looking up nearby schools…</p>');
-    if (!p.postcode && !extractPostcode(p.address)) return open('<p class="near-status">Add a postcode to this property to see nearby schools.</p>');
     const ns = p.nearestSchools;
     if (!ns) return open('<p class="near-status">Looking up nearby schools…</p>');
-    if (ns.error) return open('<p class="near-status">Could not find that postcode — please check it.</p>');
+    if (ns.error) return open('<p class="near-status">Could not work out a postcode for this address — try entering one directly.</p>');
     const rows = sortNearRows(p.id, type, ns[type] || []);
     if (!rows.length) return open('<p class="near-status">No schools found nearby.</p>');
     const state = nearSortState[p.id + ':' + type] || {};
@@ -1508,18 +1575,6 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
     if (/rightmove\.co\.uk/i.test(url)) return 'Rightmove';
     if (/zoopla\.co\.uk/i.test(url)) return 'Zoopla';
     return 'Listing';
-  }
-  function youtubeId(url){
-    const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
-    return m ? m[1] : null;
-  }
-  function isDirectVideo(url){ return /\.(mp4|webm|mov|ogg)(\?.*)?$/i.test(url); }
-  function renderVideo(url){
-    if (!url) return '';
-    const yid = youtubeId(url);
-    if (yid) return '<div class="prop-video"><iframe src="https://www.youtube.com/embed/' + yid + '" allowfullscreen loading="lazy"></iframe></div>';
-    if (isDirectVideo(url)) return '<div class="prop-video"><video controls src="' + escapeAttr(url) + '"></video></div>';
-    return '<div class="prop-video"><a href="' + escapeAttr(url) + '" target="_blank" rel="noopener">▶ Watch video</a></div>';
   }
   window.handleImgError = function(img){
     const parent = img.parentElement;
@@ -1601,7 +1656,6 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
         statusBadge +
         warn +
         (p.link ? '<a class="prop-link" href="' + escapeAttr(p.link) + '" target="_blank" rel="noopener">View listing ↗</a>' : '') +
-        renderVideo(p.video) +
         '<p class="prop-comments-display">' + (p.comments ? escapeHtml(p.comments) : 'No notes yet.') + '</p>' +
         '<div class="prop-actions"><button class="btn-edit">Edit</button></div>' +
       '</div>';
@@ -1615,7 +1669,13 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
     row.appendChild(buildPropCard(p));
     const panel = document.createElement('div');
     panel.className = 'prop-schools-panel';
-    panel.innerHTML = renderNearTable(p, 'primary') + renderNearTable(p, 'secondary');
+    let guessNote = '';
+    if (p.postcodeGuessed && p.nearestSchools && !p.nearestSchools.error){
+      guessNote = '<p class="near-guess-note">Postcode auto-detected' +
+        (p.nearestSchools.postcode ? ' as <strong>' + escapeHtml(p.nearestSchools.postcode) + '</strong>' : '') +
+        ' from the address — open Edit to correct it once you know the exact one.</p>';
+    }
+    panel.innerHTML = guessNote + renderNearTable(p, 'primary') + renderNearTable(p, 'secondary');
     row.appendChild(panel);
     return row;
   }
@@ -1664,7 +1724,7 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
     document.getElementById('propLink').value = p ? (p.link || '') : '';
     document.getElementById('propDate').value = p ? (p.date || '') : '';
     document.getElementById('propTime').value = p ? (p.time || '') : '';
-    document.getElementById('propStatus').value = p ? (p.status || '') : '';
+    document.getElementById('propStatus').value = p ? (p.status || 'property-of-interest') : 'property-of-interest';
     const imgVal = p ? (p.image || '') : '';
     if (imgVal.indexOf('data:') === 0){
       propImageInput.value = '';
@@ -1673,7 +1733,6 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
       propImageInput.value = imgVal;
       propImageInput.placeholder = 'Direct link to a photo';
     }
-    document.getElementById('propVideo').value = p ? (p.video || '') : '';
     document.getElementById('propComments').value = p ? (p.comments || '') : '';
     propDeleteBtn.style.display = p ? 'inline-block' : 'none';
     propModalBackdrop.classList.add('open');
@@ -1705,12 +1764,12 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
     const data = {
       address: document.getElementById('propAddress').value.trim(),
       postcode: document.getElementById('propPostcode').value.trim().toUpperCase(),
+      postcodeGuessed: false,
       link: document.getElementById('propLink').value.trim(),
       date: document.getElementById('propDate').value,
       time: document.getElementById('propTime').value,
       status: document.getElementById('propStatus').value,
       image: imageValue,
-      video: document.getElementById('propVideo').value.trim(),
       comments: document.getElementById('propComments').value.trim(),
     };
     if (!data.address) return;
