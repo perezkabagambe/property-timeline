@@ -660,17 +660,22 @@
     setSyncStatus('Connecting to Google Drive…', 'neutral');
     try{
       driveFileId = await driveFindFile();
+      let healRemote = false;
       if (driveFileId){
         const text = await driveReadFile(driveFileId);
         const parsed = JSON.parse(text);
-        tasks = parsed.tasks || tasks;
-        milestones = parsed.milestones || milestones;
-        properties = parsed.properties || properties;
-        todos = parsed.todos || todos;
+        // A missing/empty field in the Drive copy (e.g. from an early or failed push)
+        // must never silently wipe out real local data — keep the local version and
+        // re-push below so Drive catches up instead.
+        if (Array.isArray(parsed.tasks) && parsed.tasks.length) tasks = parsed.tasks; else healRemote = true;
+        if (Array.isArray(parsed.milestones) && parsed.milestones.length) milestones = parsed.milestones; else healRemote = true;
+        if (Array.isArray(parsed.properties) && parsed.properties.length) properties = parsed.properties; else healRemote = true;
+        if (Array.isArray(parsed.todos) && parsed.todos.length) todos = parsed.todos; else healRemote = true;
       } else {
         driveFileId = await driveCreateFile(JSON.stringify({tasks: tasks, milestones: milestones, properties: properties, todos: todos}));
       }
       driveReady = true;
+      if (healRemote) await pushToDrive();
       if (reloadAfter){
         // Full reload guarantees every view (board, overlays, properties, todos,
         // title-block dates) reflects the freshly-merged Drive data consistently.
