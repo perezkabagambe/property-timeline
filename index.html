@@ -256,6 +256,9 @@
     padding:8px 10px;border:1px solid rgba(0,0,0,.22);border-radius:5px;background:#fff;color:var(--paper-ink);
   }
   .field-label input[type=file]{border:1px dashed rgba(0,0,0,.3);background:rgba(0,0,0,.03);padding:8px;}
+  .prop-image-preview-wrap{margin-top:8px;}
+  .prop-image-preview{display:block;max-width:100%;max-height:160px;border-radius:6px;object-fit:cover;}
+  .prop-image-preview-error{font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:#7A2E1B;background:#F0D8C8;padding:6px 9px;border-radius:5px;margin:0;}
   .field-label input[type=checkbox]{width:auto;display:inline-block;margin:0 6px 0 0;}
   .field-row{display:flex;gap:10px;}
   .field-row .field-label{flex:1;}
@@ -478,6 +481,10 @@
       <label class="field-label">Image URL (optional)
         <input type="url" id="propImage" placeholder="Direct link to a photo">
       </label>
+      <div id="propImagePreviewWrap" class="prop-image-preview-wrap" style="display:none;">
+        <img id="propImagePreview" class="prop-image-preview" alt="Preview">
+        <p id="propImagePreviewError" class="prop-image-preview-error" style="display:none;">Couldn't load that image — check the link.</p>
+      </div>
       <label class="field-label">Or upload a photo
         <input type="file" id="propImageFile" accept="image/*">
       </label>
@@ -1358,6 +1365,26 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
   const propDeleteBtn = document.getElementById('propDeleteBtn');
   const propImageInput = document.getElementById('propImage');
   const propImageFileInput = document.getElementById('propImageFile');
+  const propImagePreviewWrap = document.getElementById('propImagePreviewWrap');
+  const propImagePreview = document.getElementById('propImagePreview');
+  const propImagePreviewError = document.getElementById('propImagePreviewError');
+
+  function updatePropImagePreview(url){
+    url = (url || '').trim();
+    if (!url){
+      propImagePreviewWrap.style.display = 'none';
+      return;
+    }
+    propImagePreviewWrap.style.display = 'block';
+    propImagePreviewError.style.display = 'none';
+    propImagePreview.style.display = 'block';
+    propImagePreview.src = url;
+  }
+  propImagePreview.addEventListener('error', () => {
+    propImagePreview.style.display = 'none';
+    propImagePreviewError.style.display = 'block';
+  });
+  propImageInput.addEventListener('input', () => updatePropImagePreview(propImageInput.value));
 
   const STATUS_LABELS = {
     'property-of-interest': 'Property of Interest',
@@ -1740,9 +1767,11 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
     if (imgVal.indexOf('data:') === 0){
       propImageInput.value = '';
       propImageInput.placeholder = 'Photo already uploaded — pick a new file to replace it';
+      updatePropImagePreview('');
     } else {
       propImageInput.value = imgVal;
       propImageInput.placeholder = 'Direct link to a photo';
+      updatePropImagePreview(imgVal);
     }
     document.getElementById('propComments').value = p ? (p.comments || '') : '';
     propDeleteBtn.style.display = p ? 'inline-block' : 'none';
