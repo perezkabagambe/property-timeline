@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Completion Plan — Jul–Nov 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root{
+    --bg: #0F1B2D;
+    --grid: #24405A;
+    --grid-strong: #33587A;
+    --ink: #DCE8F0;
+    --ink-dim: #8FA9BE;
+    --paper: #EDE6D6;
+    --paper-ink: #211C14;
+    --paper-ink-dim: #5C5546;
+    --critical: #C05B3E;
+    --caution: #D4A017;
+    --done: #6B8F71;
+    --lane-finance: #7FA8C9;
+    --lane-search: #93B98A;
+    --lane-legal: #C9A66B;
+    --lane-adhoc: #A79BC4;
+    --neutral-marker: #DCE8F0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Mono', monospace;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding:20px 16px 60px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  header{
+    display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:flex-start;
+    border-bottom:1px solid var(--grid-strong);padding-bottom:18px;margin-bottom:18px;
+  }
+  .title-eyebrow{font-size:11px;letter-spacing:.18em;color:var(--ink-dim);text-transform:uppercase;margin:0 0 6px;}
+  h1{font-family:'Source Serif 4', serif;font-weight:700;font-size:clamp(24px,4vw,34px);margin:0 0 6px;color:var(--ink);letter-spacing:-0.01em;}
+  .subtitle{font-family:'Source Serif 4', serif;font-size:15px;color:var(--ink-dim);margin:0;max-width:48ch;}
+
+  .title-block{border:1px solid var(--grid-strong);background:var(--bg);min-width:220px;font-size:11px;line-height:1.5;}
+  .title-block .tb-row{display:flex;justify-content:space-between;padding:7px 10px;border-bottom:1px solid var(--grid);gap:12px;}
+  .title-block .tb-row:last-child{border-bottom:none;}
+  .title-block .tb-label{color:var(--ink-dim);letter-spacing:.06em;}
+  .title-block .tb-value{color:var(--caution);font-weight:600;text-align:right;}
+  .title-block .tb-value.status{color:var(--ink);font-weight:500;}
+
+  .sync-bar{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+    font-size:11.5px;color:var(--ink-dim);margin-bottom:14px;padding:9px 12px;
+    border:1px solid var(--grid-strong);border-radius:6px;
+  }
+  .sync-bar .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ink-dim);display:inline-block;margin-right:7px;flex:none;}
+  .sync-bar .sync-dot.on{background:var(--done);}
+  .sync-bar .sync-dot.off{background:var(--critical);}
+  .btn-signout{background:transparent;border:1px solid var(--ink-dim);color:var(--ink-dim);font-family:'IBM Plex Mono', monospace;font-size:11.5px;padding:6px 12px;border-radius:5px;cursor:pointer;white-space:nowrap;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:14px 22px;font-size:11px;color:var(--ink-dim);margin-bottom:16px;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .swatch{width:11px;height:11px;flex:none;display:inline-block;border-radius:2px;}
+  .swatch.diamond{border-radius:2px;transform:rotate(45deg);width:9px;height:9px;}
+
+  .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+  .btn-add{
+    background:var(--caution);color:#241a02;border:none;
+    font-family:'IBM Plex Mono', monospace;font-weight:700;font-size:12px;
+    padding:9px 14px;border-radius:5px;cursor:pointer;letter-spacing:.03em;white-space:nowrap;
+  }
+  .btn-add:hover{filter:brightness(1.08);}
+  .btn-add-secondary{background:transparent;border:1px solid var(--caution);color:var(--caution);}
+
+  .board-scroll{overflow-x:auto;border:1px solid var(--grid-strong);padding-bottom:4px;}
+  .board-inner{position:relative;width:1470px;}
+  .row{display:flex;border-bottom:1px solid var(--grid);}
+  .row:last-child{border-bottom:none;}
+  .label-cell{
+    width:168px;flex:none;position:sticky;left:0;background:var(--bg);z-index:5;
+    padding:10px 12px;font-size:11px;color:var(--ink-dim);letter-spacing:.05em;text-transform:uppercase;
+    border-right:1px solid var(--grid-strong);display:flex;align-items:center;
+  }
+  .track-cell{position:relative;width:1300px;flex:none;min-height:56px;}
+  .axis-row .track-cell{min-height:62px;}
+  .milestones-row .track-cell{min-height:38px;}
+  .grid-layer, .content-layer{position:absolute;inset:0;}
+  .grid-layer{pointer-events:none;}
+
+  .month-line{position:absolute;top:0;bottom:0;width:1px;background:var(--grid);}
+  .month-label{position:absolute;top:6px;font-size:11px;font-weight:600;color:var(--ink);letter-spacing:.08em;transform:translateX(4px);}
+  .week-tick{position:absolute;top:24px;width:1px;height:8px;background:var(--grid-strong);}
+  .week-label{position:absolute;top:33px;font-size:8.5px;color:var(--ink-dim);white-space:nowrap;transform-origin:left top;transform:rotate(40deg);}
+
+  .bar{
+    position:absolute;top:13px;height:32px;border-radius:3px;cursor:pointer;
+    display:flex;align-items:center;padding:0 22px 0 9px;font-size:11.5px;color:#0F1B2D;
+    border:1px solid rgba(0,0,0,.15);transition:filter .12s ease, transform .12s ease;z-index:3;
+  }
+  .bar:hover{filter:brightness(1.12);transform:translateY(-1px);}
+  .bar-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bar.critical{background:var(--critical);color:#F7E9E4;font-weight:600;}
+  .bar.lane-finance{background:var(--lane-finance);}
+  .bar.lane-search{background:var(--lane-search);}
+  .bar.lane-legal{background:var(--lane-legal);}
+  .bar.lane-adhoc{background:var(--lane-adhoc);}
+  .bar.done{opacity:.45;}
+  .bar.overdue{outline:2px solid var(--critical);outline-offset:1px;}
+  .bar.active{box-shadow:0 0 0 2px var(--caution);}
+  .status-badge{
+    position:absolute;bottom:2px;right:2px;width:16px;height:16px;border-radius:50%;
+    background:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:center;
+    font-size:10px;line-height:1;cursor:pointer;
+  }
+
+  .milestone{
+    position:absolute;top:12px;width:12px;height:12px;transform:translateX(-6px) rotate(45deg);
+    cursor:pointer;border:1px solid rgba(0,0,0,.2);z-index:4;
+  }
+  .milestone.deadline{background:var(--critical);}
+  .milestone.travel{background:var(--neutral-marker);}
+  .milestone.target{background:var(--done);}
+  .milestone-label{
+    position:absolute;top:28px;font-size:9.5px;color:var(--ink-dim);width:110px;line-height:1.25;
+    transform:translateX(-50%);text-align:center;z-index:4;cursor:pointer;
+  }
+
+  .travel-band{
+    position:absolute;top:0;bottom:0;
+    background:repeating-linear-gradient(135deg, rgba(220,232,240,0.05), rgba(220,232,240,0.05) 6px, rgba(220,232,240,0.11) 6px, rgba(220,232,240,0.11) 12px);
+    border-left:1px dashed var(--ink-dim);border-right:1px dashed var(--ink-dim);cursor:pointer;z-index:1;
+  }
+  .travel-band-tag{position:absolute;top:6px;left:6px;font-size:9.5px;letter-spacing:.08em;color:var(--ink-dim);text-transform:uppercase;writing-mode:vertical-rl;white-space:nowrap;}
+
+  .today-line{position:absolute;top:0;bottom:0;width:0;border-left:2px dashed var(--caution);z-index:6;}
+  .today-flag{position:absolute;top:-2px;transform:translateX(-50%);background:var(--caution);color:#241a02;font-size:9.5px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:2px;white-space:nowrap;}
+
+  footer.note{margin-top:14px;font-size:11.5px;color:var(--ink-dim);}
+
+  .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(6,10,16,.65);z-index:50;align-items:flex-end;justify-content:center;padding:0;}
+  .modal-backdrop.open{display:flex;}
+  .modal-card{
+    background:var(--paper);color:var(--paper-ink);width:100%;max-width:560px;border-radius:14px 14px 0 0;
+    padding:22px 22px 28px;font-family:'Source Serif 4', serif;box-shadow:0 -8px 30px rgba(0,0,0,.4);
+    max-height:85vh;overflow-y:auto;
+  }
+  @media(min-width:640px){ .modal-backdrop{align-items:center;padding:20px;} .modal-card{border-radius:12px;} }
+  .modal-eyebrow{font-family:'IBM Plex Mono', monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--paper-ink-dim);margin:0 0 6px;}
+  .modal-close{position:sticky;top:0;float:right;background:none;border:none;font-family:'IBM Plex Mono', monospace;font-size:13px;color:var(--paper-ink-dim);cursor:pointer;padding:4px 8px;}
+
+  .properties-section{margin-top:38px;}
+  .props-header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--grid-strong);padding-bottom:14px;margin-bottom:10px;}
+  .props-h2{font-family:'Source Serif 4', serif;font-size:22px;margin:0;color:var(--ink);}
+  .props-note{font-size:11.5px;color:var(--ink-dim);margin:0 0 16px;max-width:64ch;line-height:1.5;}
+  .props-status{font-size:12.5px;color:var(--ink-dim);padding:10px 0;}
+  .props-subheading{
+    font-family:'IBM Plex Mono', monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-dim);margin:18px 0 10px;padding-top:14px;border-top:1px dashed var(--grid-strong);
+  }
+  .props-subheading:first-child{border-top:none;padding-top:0;margin-top:0;}
+  .props-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(250px, 1fr));gap:16px;}
+
+  .prop-card{background:var(--paper);color:var(--paper-ink);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 14px rgba(0,0,0,.28);}
+  .prop-thumb{width:100%;aspect-ratio:16/10;background:#DDD3BE;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .prop-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .prop-thumb.placeholder{color:var(--paper-ink-dim);font-family:'IBM Plex Mono', monospace;font-size:11px;text-align:center;padding:10px;letter-spacing:.04em;text-transform:uppercase;}
+  .prop-body{padding:14px 14px 16px;display:flex;flex-direction:column;gap:8px;}
+  .prop-top-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .prop-address{font-family:'Source Serif 4', serif;font-size:16.5px;font-weight:700;margin:0;line-height:1.25;}
+  .prop-badge{font-family:'IBM Plex Mono', monospace;font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;background:var(--paper-ink);color:var(--paper);padding:3px 6px;border-radius:3px;white-space:nowrap;flex:none;}
+  .prop-meta{font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:var(--paper-ink-dim);margin:0;}
+  .prop-warning{display:inline-block;font-family:'IBM Plex Mono', monospace;font-size:10.5px;color:#7A2E1B;background:#F0D8C8;padding:3px 6px;border-radius:3px;width:fit-content;}
+  .prop-link{font-size:13px;color:#2D5C7A;text-decoration:underline;}
+  .prop-video iframe, .prop-video video{width:100%;border-radius:6px;display:block;aspect-ratio:16/9;}
+  .prop-video a{font-size:12.5px;color:#2D5C7A;}
+  .prop-comments-display{font-family:'Source Serif 4', serif;font-size:13.5px;line-height:1.45;color:var(--paper-ink);background:rgba(0,0,0,.045);padding:8px 10px;border-radius:6px;white-space:pre-line;margin:2px 0 0;}
+  .prop-actions{display:flex;justify-content:flex-end;}
+  .btn-edit{background:none;border:1px solid var(--paper-ink-dim);color:var(--paper-ink);font-family:'IBM Plex Mono', monospace;font-size:11px;padding:5px 10px;border-radius:4px;cursor:pointer;}
+  .btn-edit:hover{background:rgba(0,0,0,.06);}
+
+  .prop-form-card{max-width:520px;}
+  .field-label{display:block;font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:.04em;color:var(--paper-ink-dim);text-transform:uppercase;margin:14px 0 4px;}
+  .field-label input, .field-label textarea, .field-label select{
+    display:block;width:100%;margin-top:5px;font-family:'Source Serif 4', serif;font-size:14.5px;
+    padding:8px 10px;border:1px solid rgba(0,0,0,.22);border-radius:5px;background:#fff;color:var(--paper-ink);
+  }
+  .field-label input[type=file]{border:1px dashed rgba(0,0,0,.3);background:rgba(0,0,0,.03);padding:8px;}
+  .field-label input[type=checkbox]{width:auto;display:inline-block;margin:0 6px 0 0;}
+  .field-row{display:flex;gap:10px;}
+  .field-row .field-label{flex:1;}
+  .form-actions{display:flex;justify-content:space-between;align-items:center;margin-top:20px;}
+  .btn-save{background:var(--paper-ink);color:var(--paper);border:none;font-family:'IBM Plex Mono', monospace;font-weight:700;font-size:12.5px;padding:9px 16px;border-radius:5px;cursor:pointer;}
+  .btn-delete{background:none;border:1px solid var(--critical);color:var(--critical);font-family:'IBM Plex Mono', monospace;font-size:12px;padding:8px 12px;border-radius:5px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <p class="title-eyebrow">Onward purchase &amp; remortgage</p>
+      <h1>Completion Plan</h1>
+      <p class="subtitle">Editable plan — tap any bar or diamond to update it, or add new tasks and milestones as things change.</p>
+    </div>
+    <div class="title-block" id="titleBlock">
+      <div class="tb-row"><span class="tb-label">Today</span><span class="tb-value" id="tbToday">—</span></div>
+      <div class="tb-row"><span class="tb-label">Status</span><span class="tb-value status" id="tbStatus">—</span></div>
+      <div class="tb-row"><span class="tb-label">Target</span><span class="tb-value status" id="tbTarget">—</span></div>
+    </div>
+  </header>
+
+  <div class="sync-bar" id="syncBar">
+    <span id="syncStatus"><span class="sync-dot off" id="syncDot"></span>Not connected — changes save to this browser only</span>
+    <button class="btn-add btn-add-secondary" id="googleSignInBtn">Sign in with Google</button>
+  </div>
+
+  <div class="legend">
+    <span><i class="swatch" style="background:var(--lane-finance)"></i>Finance</span>
+    <span><i class="swatch" style="background:var(--lane-search)"></i>Search</span>
+    <span><i class="swatch" style="background:var(--lane-legal)"></i>Legal &amp; completion</span>
+    <span><i class="swatch" style="background:var(--lane-adhoc)"></i>Ad hoc</span>
+    <span><i class="swatch" style="background:var(--critical)"></i>Critical / urgent</span>
+    <span><i class="swatch diamond" style="background:var(--critical)"></i>Deadline</span>
+    <span><i class="swatch diamond" style="background:var(--done)"></i>Target date</span>
+    <span>🧍 Pending</span>
+    <span>🏃 In progress</span>
+    <span>🏁 Complete</span>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn-add" id="addTaskBtn">+ Add task</button>
+    <button class="btn-add btn-add-secondary" id="addMilestoneBtn">+ Add milestone</button>
+  </div>
+
+  <div class="board-scroll">
+    <div class="board-inner" id="boardInner">
+      <div class="row axis-row">
+        <div class="label-cell"></div>
+        <div class="track-cell" id="axisTrack"></div>
+      </div>
+      <div class="row milestones-row">
+        <div class="label-cell">Deadlines</div>
+        <div class="track-cell" id="milestoneTrack"></div>
+      </div>
+      <div class="row">
+        <div class="label-cell">Finance</div>
+        <div class="track-cell" id="financeTrack"></div>
+      </div>
+      <div class="row">
+        <div class="label-cell">Search</div>
+        <div class="track-cell" id="searchTrack"></div>
+      </div>
+      <div class="row">
+        <div class="label-cell">Legal &amp; completion</div>
+        <div class="track-cell" id="legalTrack"></div>
+      </div>
+      <div class="row">
+        <div class="label-cell">Ad hoc</div>
+        <div class="track-cell" id="adhocTrack"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="note">Tap a bar or diamond to edit it. Tap the small circle badge on a task to cycle 🧍 → 🏃 → 🏁. Scroll sideways to see July–December.</footer>
+
+  <section class="properties-section">
+    <div class="props-header">
+      <div>
+        <p class="title-eyebrow">Viewing schedule</p>
+        <h2 class="props-h2">Property Viewings</h2>
+      </div>
+      <button class="btn-add" id="addPropertyBtn">+ Add viewing</button>
+    </div>
+    <p class="props-note">Paste a Rightmove or Zoopla link for each viewing, or add one before you've booked a slot — it'll show as "not yet scheduled" until you set a date. For a photo, paste a direct image address or upload one from your device. Video can be a YouTube/Drive link or a direct video file link.</p>
+    <div id="propsStatus" class="props-status">Loading saved viewings…</div>
+    <div id="propsList"></div>
+  </section>
+</div>
+
+<div class="modal-backdrop" id="taskModalBackdrop">
+  <div class="modal-card prop-form-card">
+    <button class="modal-close" id="taskModalClose">CLOSE ✕</button>
+    <p class="modal-eyebrow" id="taskFormEyebrow">Add task</p>
+    <form id="taskForm">
+      <label class="field-label">Lane
+        <select id="taskLane">
+          <option value="finance">Finance</option>
+          <option value="search">Search</option>
+          <option value="legal">Legal &amp; completion</option>
+          <option value="adhoc">Ad hoc</option>
+        </select>
+      </label>
+      <label class="field-label">Short label (shown on the bar)
+        <input type="text" id="taskLabel" required placeholder="e.g. Call the lender">
+      </label>
+      <div class="field-row">
+        <label class="field-label">Start date
+          <input type="date" id="taskStart" required>
+        </label>
+        <label class="field-label">End date
+          <input type="date" id="taskEnd" required>
+        </label>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Status
+          <select id="taskStatus">
+            <option value="pending">🧍 Pending</option>
+            <option value="in-progress">🏃 In progress</option>
+            <option value="complete">🏁 Complete</option>
+          </select>
+        </label>
+        <label class="field-label" style="display:flex;align-items:center;">
+          <input type="checkbox" id="taskCritical"> Mark urgent
+        </label>
+      </div>
+      <label class="field-label">Description (shown when you tap the bar)
+        <textarea id="taskDetail" rows="4" placeholder="Full explanation..."></textarea>
+      </label>
+      <label class="field-label">Notes
+        <textarea id="taskNotes" rows="3" placeholder="Your own running notes..."></textarea>
+      </label>
+      <div class="form-actions">
+        <button type="button" class="btn-delete" id="taskDeleteBtn" style="display:none;">Delete</button>
+        <button type="submit" class="btn-save">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="milestoneModalBackdrop">
+  <div class="modal-card prop-form-card">
+    <button class="modal-close" id="milestoneModalClose">CLOSE ✕</button>
+    <p class="modal-eyebrow" id="milestoneFormEyebrow">Add milestone</p>
+    <form id="milestoneForm">
+      <label class="field-label">Label
+        <input type="text" id="msLabel" required placeholder="e.g. Offer expires">
+      </label>
+      <label class="field-label">Date
+        <input type="date" id="msDate" required>
+      </label>
+      <label class="field-label">Type
+        <select id="msType">
+          <option value="deadline">Deadline (red)</option>
+          <option value="travel">Travel (neutral)</option>
+          <option value="target">Target (green)</option>
+        </select>
+      </label>
+      <label class="field-label">Description (shown when tapped)
+        <textarea id="msDetail" rows="4" placeholder="Full explanation..."></textarea>
+      </label>
+      <div class="form-actions">
+        <button type="button" class="btn-delete" id="msDeleteBtn" style="display:none;">Delete</button>
+        <button type="submit" class="btn-save">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="propModalBackdrop">
+  <div class="modal-card prop-form-card">
+    <button class="modal-close" id="propModalClose">CLOSE ✕</button>
+    <p class="modal-eyebrow" id="propFormEyebrow">Add viewing</p>
+    <form id="propForm">
+      <label class="field-label">Address / label
+        <input type="text" id="propAddress" required placeholder="12 Example Street, Townville">
+      </label>
+      <label class="field-label">Listing link (Rightmove / Zoopla)
+        <input type="url" id="propLink" placeholder="https://www.rightmove.co.uk/...">
+      </label>
+      <div class="field-row">
+        <label class="field-label">Viewing date (leave blank if not booked yet)
+          <input type="date" id="propDate">
+        </label>
+        <label class="field-label">Time
+          <input type="time" id="propTime">
+        </label>
+      </div>
+      <label class="field-label">Image URL (optional)
+        <input type="url" id="propImage" placeholder="Direct link to a photo">
+      </label>
+      <label class="field-label">Or upload a photo
+        <input type="file" id="propImageFile" accept="image/*">
+      </label>
+      <label class="field-label">Video link (optional)
+        <input type="url" id="propVideo" placeholder="YouTube / Drive / direct video link">
+      </label>
+      <label class="field-label">Notes
+        <textarea id="propComments" rows="3" placeholder="Impressions after the viewing..."></textarea>
+      </label>
+      <div class="form-actions">
+        <button type="button" class="btn-delete" id="propDeleteBtn" style="display:none;">Delete</button>
+        <button type="submit" class="btn-save">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  const LABEL_W = 168;
+  const TRACK_W = 1300;
+  const chartStart = new Date('2026-07-14T00:00:00');
+  const chartEnd   = new Date('2026-12-06T00:00:00');
+  const spanMs = chartEnd - chartStart;
+  const dayMs = 86400000;
+  const DEFAULT_DEPART = '2026-09-03';
+  const DEFAULT_RETURN = '2026-11-01';
+  const DEFAULT_TARGET = '2026-11-30';
+  const months = ['2026-07-01','2026-08-01','2026-09-01','2026-10-01','2026-11-01','2026-12-01'];
+  const monthNames = ['Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  function xPct(dateStr){
+    const d = new Date(dateStr + 'T00:00:00');
+    return Math.max(0, Math.min(100, (d - chartStart) / spanMs * 100));
+  }
+  function fmt(dateStr){
+    if(!dateStr) return '';
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+  }
+  function toDateStr(d){
+    const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+    return y + '-' + m + '-' + day;
+  }
+  function escapeAttr(s){ return (s || '').replace(/"/g, '&quot;'); }
+  function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+  function uid(prefix){ return prefix + Date.now() + Math.floor(Math.random() * 1000); }
+
+  // ================= Google Drive sync =================
+  // 1. Create an OAuth Client ID in Google Cloud Console (APIs & Services > Credentials).
+  // 2. Add the URL where this file is hosted under "Authorized JavaScript origins".
+  //    Note: this must be an http(s) origin — opening the file directly (file://) will not work.
+  // 3. Paste the Client ID below.
+  const GOOGLE_CLIENT_ID = '1005270309634-f3is3dp5u973k3jsrs6mmecb908asl7p.apps.googleusercontent.com';
+  const DRIVE_FILE_NAME = 'property-timeline-data.json';
+  const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+
+  let tokenClient = null;
+  let accessToken = null;
+  let driveFileId = null;
+  let driveReady = false;
+
+  const syncStatusEl = document.getElementById('syncStatus');
+  const syncDotEl = document.getElementById('syncDot');
+  const signInBtn = document.getElementById('googleSignInBtn');
+
+  function setSyncStatus(text, state){
+    // state: 'on' | 'off' | 'neutral'
+    syncDotEl.className = 'sync-dot' + (state ? ' ' + state : '');
+    syncStatusEl.textContent = '';
+    syncStatusEl.appendChild(syncDotEl);
+    syncStatusEl.appendChild(document.createTextNode(text));
+  }
+
+  async function driveFindFile(){
+    const q = encodeURIComponent("name='" + DRIVE_FILE_NAME + "' and trashed=false");
+    const res = await fetch('https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id,name)&spaces=drive', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    if (!res.ok) throw new Error('Drive lookup failed');
+    const data = await res.json();
+    return (data.files && data.files[0]) ? data.files[0].id : null;
+  }
+  async function driveCreateFile(contentStr){
+    const metadata = { name: DRIVE_FILE_NAME, mimeType: 'application/json' };
+    const boundary = 'plan_boundary_' + Date.now();
+    const body =
+      '--' + boundary + '\r\nContent-Type: application/json\r\n\r\n' + JSON.stringify(metadata) + '\r\n' +
+      '--' + boundary + '\r\nContent-Type: application/json\r\n\r\n' + contentStr + '\r\n' +
+      '--' + boundary + '--';
+    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + accessToken,
+        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+      },
+      body: body
+    });
+    if (!res.ok) throw new Error('Drive create failed');
+    const data = await res.json();
+    return data.id;
+  }
+  async function driveUpdateFile(fileId, contentStr){
+    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files/' + fileId + '?uploadType=media', {
+      method: 'PATCH',
+      headers: {
+        Authorization: 'Bearer ' + accessToken,
+        'Content-Type': 'application/json'
+      },
+      body: contentStr
+    });
+    if (!res.ok) throw new Error('Drive update failed');
+  }
+  async function driveReadFile(fileId){
+    const res = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    if (!res.ok) throw new Error('Drive read failed');
+    return await res.text();
+  }
+
+  async function syncFromDrive(){
+    setSyncStatus('Connecting to Google Drive…', 'neutral');
+    try{
+      driveFileId = await driveFindFile();
+      if (driveFileId){
+        const text = await driveReadFile(driveFileId);
+        const parsed = JSON.parse(text);
+        tasks = parsed.tasks || tasks;
+        milestones = parsed.milestones || milestones;
+        properties = parsed.properties || properties;
+      } else {
+        driveFileId = await driveCreateFile(JSON.stringify({tasks: tasks, milestones: milestones, properties: properties}));
+      }
+      driveReady = true;
+      renderBoard();
+      renderOverlays();
+      renderProperties();
+      setSyncStatus('Connected — synced to Google Drive', 'on');
+      signInBtn.textContent = 'Sign out';
+    } catch(e){
+      driveReady = false;
+      setSyncStatus('Signed in, but Drive sync failed — saving locally only', 'off');
+    }
+  }
+
+  async function pushToDrive(){
+    if (!accessToken || !driveReady) return;
+    try{
+      const payload = JSON.stringify({tasks: tasks, milestones: milestones, properties: properties});
+      if (!driveFileId){
+        driveFileId = await driveCreateFile(payload);
+      } else {
+        await driveUpdateFile(driveFileId, payload);
+      }
+      setSyncStatus('Connected — synced to Google Drive', 'on');
+    } catch(e){
+      setSyncStatus('Connected, but last change failed to sync — saved locally only', 'off');
+    }
+  }
+
+  function handleAuthResponse(resp){
+    if (resp.error){
+      setSyncStatus('Not connected — changes save to this browser only', 'off');
+      return;
+    }
+    accessToken = resp.access_token;
+    syncFromDrive();
+  }
+
+  function initGoogleAuth(){
+    if (typeof google === 'undefined' || !google.accounts || GOOGLE_CLIENT_ID.indexOf('PASTE_YOUR') === 0){
+      setSyncStatus('Not connected — changes save to this browser only', 'off');
+      return;
+    }
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: DRIVE_SCOPE,
+      callback: handleAuthResponse
+    });
+    // Attempt a silent reconnect if there's already a Google session — never an interactive popup on load.
+    tokenClient.requestAccessToken({ prompt: '' });
+  }
+
+  signInBtn.addEventListener('click', () => {
+    if (accessToken){
+      google.accounts.oauth2.revoke(accessToken, () => {
+        accessToken = null;
+        driveFileId = null;
+        driveReady = false;
+        signInBtn.textContent = 'Sign in with Google';
+        setSyncStatus('Not connected — changes save to this browser only', 'off');
+      });
+      return;
+    }
+    if (!tokenClient){
+      setSyncStatus('Google sign-in isn\u2019t configured on this page yet', 'off');
+      return;
+    }
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+  });
+
+  window.addEventListener('load', () => { setTimeout(initGoogleAuth, 300); });
+
+  const DEFAULT_TASKS = [
+    {id:'f1', lane:'finance', label:'Call lender — port offer?', start:'2026-07-20', end:'2026-07-24', critical:true, status:'pending', notes:'',
+      detail:"Call the lender/broker behind the still-live mortgage offer from the property you pulled out of. Ask three things: (1) will they transfer this offer to a new property, (2) what's required if so — usually a fresh valuation (~£250) and possibly updated payslips/bank statements since it's been a few months, (3) can the offer itself be extended past 1 September if you haven't found a property yet.\n\nThis is the single most time-critical call in the whole plan — the answer determines whether you're racing the 1 Sept deadline or have breathing room."},
+    {id:'f2', lane:'finance', label:'Call remortgage lender — arrange extension', start:'2026-07-20', end:'2026-07-24', critical:true, status:'pending', notes:'',
+      detail:"Contact the flat's remortgage lender now to pre-arrange extending the offer past its 30 September expiry. You've been told this is renewable if necessary — do it deliberately and early, rather than letting it happen by default, since the remortgage needs to complete in early November, not before."},
+    {id:'f3', lane:'finance', label:'Valuation/survey on new property', start:'2026-08-15', end:'2026-09-02', critical:false, status:'pending', notes:'',
+      detail:"Once you have a property and (assuming the offer can be ported) the lender instructs a new valuation/survey. This typically takes 1–3 weeks depending on surveyor availability. Get this moving the moment an offer is accepted — don't wait."},
+    {id:'f4', lane:'finance', label:'Remortgage completes — funds released', start:'2026-11-02', end:'2026-11-05', critical:false, status:'pending', notes:'',
+      detail:"Time this for the first few days after you're back in the UK (from 1 Nov), using the extension arranged in July. This releases the deposit funds, which need to reach your purchase solicitor's client account before exchange."},
+    {id:'s1', lane:'search', label:'Viewings & offers', start:'2026-07-20', end:'2026-08-15', critical:false, status:'pending', notes:'',
+      detail:"Start viewing immediately — you only have until early September before travel makes viewings impossible, and you want an offer accepted well before then. Aim for mid-August, not end of August. Ask agents specifically about chain-free sellers — chains are the single biggest cause of delay in 2026 data."},
+    {id:'l1', lane:'legal', label:'Instruct solicitor + ID checks', start:'2026-08-15', end:'2026-09-02', critical:false, status:'pending', notes:'',
+      detail:"Instruct a conveyancer the moment your offer is accepted. Complete any in-person or video ID verification and key document signing before you fly on 3 Sept."},
+    {id:'l2', lane:'legal', label:'Searches & enquiries (remote)', start:'2026-09-03', end:'2026-11-01', critical:false, status:'pending', notes:'',
+      detail:"Most conveyancing — searches, enquiries, replies — proceeds fine remotely by email while you're in Uganda."},
+    {id:'l3', lane:'legal', label:'Exchange contracts', start:'2026-11-03', end:'2026-11-07', critical:false, status:'pending', notes:'',
+      detail:"Hold exchange until after 1 November. Deposit money is typically due at exchange, not just completion."},
+    {id:'l4', lane:'legal', label:'Completion — keys handed over', start:'2026-11-15', end:'2026-11-25', critical:false, status:'pending', notes:'',
+      detail:"Target completion in this window, leaving a buffer before the 30 November goal."},
+  ];
+
+  const DEFAULT_MILESTONES = [
+    {id:'m1', date:'2026-09-01', type:'deadline', label:'Ported offer expires',
+      detail:"The mortgage offer carried over from the property you pulled out of lapses on this date unless extended or already completed."},
+    {id:'m2', date:'2026-09-03', type:'travel', label:'Depart for Uganda',
+      detail:"From this date, no more viewings, and no in-person availability for signings."},
+    {id:'m3', date:'2026-09-30', type:'deadline', label:'Remortgage offer expires (renewable)',
+      detail:"The flat's remortgage offer expires here. It can be renewed if necessary."},
+    {id:'m4', date:'2026-11-01', type:'travel', label:'Return from Uganda',
+      detail:"From this date you're back and able to handle in-person signings."},
+    {id:'m5', date:'2026-11-30', type:'target', label:'Target: complete',
+      detail:"Your stated goal for completion."},
+  ];
+
+  let tasks = [];
+  let milestones = [];
+
+  const STATUS_ORDER = ['pending','in-progress','complete'];
+  const STATUS_EMOJI = {pending:'🧍', 'in-progress':'🏃', complete:'🏁'};
+  function nextStatus(s){ const i = STATUS_ORDER.indexOf(s); return STATUS_ORDER[(i+1) % STATUS_ORDER.length] || 'pending'; }
+
+  const laneClass = {finance:'lane-finance', search:'lane-search', legal:'lane-legal', adhoc:'lane-adhoc'};
+
+  const axisTrack = document.getElementById('axisTrack');
+  const trackEls = {
+    milestone: document.getElementById('milestoneTrack'),
+    finance: document.getElementById('financeTrack'),
+    search: document.getElementById('searchTrack'),
+    legal: document.getElementById('legalTrack'),
+    adhoc: document.getElementById('adhocTrack'),
+  };
+  const boardInner = document.getElementById('boardInner');
+
+  function buildGridLayer(track){
+    const layer = document.createElement('div');
+    layer.className = 'grid-layer';
+    months.forEach(m => {
+      const pct = xPct(m);
+      const line = document.createElement('div');
+      line.className = 'month-line';
+      line.style.left = pct + '%';
+      layer.appendChild(line);
+    });
+    track.appendChild(layer);
+    const contentLayer = document.createElement('div');
+    contentLayer.className = 'content-layer';
+    track.appendChild(contentLayer);
+    return contentLayer;
+  }
+  const content = {};
+  Object.keys(trackEls).forEach(k => { content[k] = buildGridLayer(trackEls[k]); });
+
+  months.forEach((m, i) => {
+    const pct = xPct(m);
+    const line = document.createElement('div');
+    line.className = 'month-line';
+    line.style.left = pct + '%';
+    axisTrack.appendChild(line);
+    const label = document.createElement('div');
+    label.className = 'month-label';
+    label.style.left = pct + '%';
+    label.textContent = monthNames[i] + ' 2026';
+    axisTrack.appendChild(label);
+  });
+  function mondayOnOrAfter(d){
+    const nd = new Date(d);
+    const day = nd.getDay();
+    const add = day === 1 ? 0 : (day === 0 ? 1 : 8 - day);
+    nd.setDate(nd.getDate() + add);
+    return nd;
+  }
+  const weekStarts = [];
+  let wc = mondayOnOrAfter(chartStart);
+  while (wc <= chartEnd){
+    weekStarts.push(new Date(wc));
+    wc.setDate(wc.getDate() + 7);
+  }
+  weekStarts.forEach(w => {
+    const iso = toDateStr(w);
+    const pct = xPct(iso);
+    const tick = document.createElement('div');
+    tick.className = 'week-tick';
+    tick.style.left = pct + '%';
+    axisTrack.appendChild(tick);
+    const lab = document.createElement('div');
+    lab.className = 'week-label';
+    lab.style.left = pct + '%';
+    lab.textContent = w.toLocaleDateString('en-GB', {day:'numeric', month:'short'});
+    axisTrack.appendChild(lab);
+  });
+
+  function keyDateStr(id, fallback){
+    const m = milestones.find(x => x.id === id);
+    return (m && m.date) ? m.date : fallback;
+  }
+  function inTravelWindow(dateStr){
+    if (!dateStr) return false;
+    const d = new Date(dateStr + 'T00:00:00');
+    const dep = new Date(keyDateStr('m2', DEFAULT_DEPART) + 'T00:00:00');
+    const ret = new Date(keyDateStr('m4', DEFAULT_RETURN) + 'T00:00:00');
+    return d >= dep && d <= ret;
+  }
+
+  let bandEl = null, todayLineEl = null;
+  function renderOverlays(){
+    if (bandEl) bandEl.remove();
+    if (todayLineEl) todayLineEl.remove();
+    const departStr = keyDateStr('m2', DEFAULT_DEPART);
+    const returnStr = keyDateStr('m4', DEFAULT_RETURN);
+    const targetStr = keyDateStr('m5', DEFAULT_TARGET);
+    const departD = new Date(departStr + 'T00:00:00');
+    const returnD = new Date(returnStr + 'T00:00:00');
+    const targetD = new Date(targetStr + 'T00:00:00');
+
+    const bandStartPx = xPct(departStr) / 100 * TRACK_W;
+    const bandEndPx = xPct(returnStr) / 100 * TRACK_W;
+    const band = document.createElement('div');
+    band.className = 'travel-band';
+    band.style.left = (LABEL_W + bandStartPx) + 'px';
+    band.style.width = Math.max(bandEndPx - bandStartPx, 0) + 'px';
+    band.addEventListener('click', () => openMilestoneForm('m2'));
+    const tag = document.createElement('div');
+    tag.className = 'travel-band-tag';
+    tag.textContent = 'ABROAD';
+    band.appendChild(tag);
+    boardInner.appendChild(band);
+    bandEl = band;
+
+    const now = new Date();
+    const todayFrac = (now - chartStart) / spanMs;
+    if (todayFrac >= 0 && todayFrac <= 1){
+      const todayX = LABEL_W + todayFrac * TRACK_W;
+      const line = document.createElement('div');
+      line.className = 'today-line';
+      line.style.left = todayX + 'px';
+      const flag = document.createElement('div');
+      flag.className = 'today-flag';
+      flag.textContent = 'TODAY';
+      flag.style.left = '0px';
+      line.appendChild(flag);
+      boardInner.appendChild(line);
+      todayLineEl = line;
+    } else {
+      todayLineEl = null;
+    }
+
+    document.getElementById('tbToday').textContent = now.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+    let status;
+    if (now < departD) status = Math.ceil((departD - now) / dayMs) + ' days to departure';
+    else if (now <= returnD) status = 'Abroad — back in ' + Math.ceil((returnD - now) / dayMs) + ' days';
+    else if (now <= targetD) status = Math.ceil((targetD - now) / dayMs) + ' days to target';
+    else status = 'Target date passed';
+    document.getElementById('tbStatus').textContent = status;
+    document.getElementById('tbTarget').textContent = fmt(targetStr);
+  }
+
+  function renderBoard(){
+    Object.values(content).forEach(c => { c.innerHTML = ''; });
+
+    milestones.forEach(m => {
+      const pct = xPct(m.date);
+      const dia = document.createElement('div');
+      dia.className = 'milestone ' + m.type;
+      dia.style.left = pct + '%';
+      dia.addEventListener('click', () => openMilestoneForm(m.id));
+      content.milestone.appendChild(dia);
+      const lab = document.createElement('div');
+      lab.className = 'milestone-label';
+      lab.style.left = pct + '%';
+      lab.textContent = m.label;
+      lab.addEventListener('click', () => openMilestoneForm(m.id));
+      content.milestone.appendChild(lab);
+    });
+
+    const now = new Date();
+    tasks.forEach(t => {
+      const track = content[t.lane] || content.adhoc;
+      const startPx = xPct(t.start) / 100 * TRACK_W;
+      const endPx = xPct(t.end) / 100 * TRACK_W;
+      const widthPx = Math.max(endPx - startPx, 40);
+      const bar = document.createElement('div');
+      const status = t.status || 'pending';
+      bar.className = 'bar ' + (t.critical ? 'critical' : (laneClass[t.lane] || 'lane-adhoc'));
+      bar.style.left = startPx + 'px';
+      bar.style.width = widthPx + 'px';
+
+      const label = document.createElement('span');
+      label.className = 'bar-label';
+      label.textContent = t.label;
+      bar.appendChild(label);
+
+      const endDate = new Date(t.end + 'T23:59:59');
+      const startDate = new Date(t.start + 'T00:00:00');
+      if (status === 'complete') bar.classList.add('done');
+      else if (endDate < now) bar.classList.add('overdue');
+      else if (startDate <= now && now <= endDate) bar.classList.add('active');
+
+      const badge = document.createElement('span');
+      badge.className = 'status-badge';
+      badge.textContent = STATUS_EMOJI[status] || STATUS_EMOJI.pending;
+      badge.title = 'Tap to change status';
+      badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        t.status = nextStatus(status);
+        persistGanttData();
+        renderBoard();
+      });
+      bar.appendChild(badge);
+
+      bar.addEventListener('click', () => openTaskForm(t.id));
+      track.appendChild(bar);
+    });
+  }
+
+  async function loadGanttData(){
+    try{
+      const res = await window.storage.get('ganttData', false);
+      if (res && res.value){
+        const parsed = JSON.parse(res.value);
+        tasks = parsed.tasks || [];
+        milestones = parsed.milestones || [];
+      } else {
+        tasks = DEFAULT_TASKS.map(t => Object.assign({}, t));
+        milestones = DEFAULT_MILESTONES.map(m => Object.assign({}, m));
+        await persistGanttData();
+      }
+    } catch(e){
+      tasks = DEFAULT_TASKS.map(t => Object.assign({}, t));
+      milestones = DEFAULT_MILESTONES.map(m => Object.assign({}, m));
+      try{ await persistGanttData(); } catch(e2){}
+    }
+    renderBoard();
+    renderOverlays();
+  }
+  async function persistGanttData(){
+    try{
+      await window.storage.set('ganttData', JSON.stringify({tasks: tasks, milestones: milestones}), false);
+    } catch(e){ /* non-fatal */ }
+    pushToDrive();
+  }
+
+  const taskModalBackdrop = document.getElementById('taskModalBackdrop');
+  const taskForm = document.getElementById('taskForm');
+  const taskFormEyebrow = document.getElementById('taskFormEyebrow');
+  const taskDeleteBtn = document.getElementById('taskDeleteBtn');
+  let editingTaskId = null;
+
+  function openTaskForm(id){
+    editingTaskId = id || null;
+    const t = id ? tasks.find(x => x.id === id) : null;
+    taskFormEyebrow.textContent = t ? 'Edit task' : 'Add task';
+    document.getElementById('taskLane').value = t ? t.lane : 'adhoc';
+    document.getElementById('taskLabel').value = t ? t.label : '';
+    document.getElementById('taskStart').value = t ? t.start : '';
+    document.getElementById('taskEnd').value = t ? t.end : '';
+    document.getElementById('taskStatus').value = t ? (t.status || 'pending') : 'pending';
+    document.getElementById('taskCritical').checked = t ? !!t.critical : false;
+    document.getElementById('taskDetail').value = t ? (t.detail || '') : '';
+    document.getElementById('taskNotes').value = t ? (t.notes || '') : '';
+    taskDeleteBtn.style.display = t ? 'inline-block' : 'none';
+    taskModalBackdrop.classList.add('open');
+  }
+  function closeTaskForm(){ taskModalBackdrop.classList.remove('open'); editingTaskId = null; }
+
+  document.getElementById('addTaskBtn').addEventListener('click', () => openTaskForm(null));
+  document.getElementById('taskModalClose').addEventListener('click', closeTaskForm);
+  taskModalBackdrop.addEventListener('click', (e) => { if (e.target === taskModalBackdrop) closeTaskForm(); });
+
+  taskForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const start = document.getElementById('taskStart').value;
+    const end = document.getElementById('taskEnd').value;
+    if (!start || !end || end < start){
+      alert('Check the dates — the end date needs to be on or after the start date.');
+      return;
+    }
+    const data = {
+      lane: document.getElementById('taskLane').value,
+      label: document.getElementById('taskLabel').value.trim(),
+      start: start, end: end,
+      status: document.getElementById('taskStatus').value,
+      critical: document.getElementById('taskCritical').checked,
+      detail: document.getElementById('taskDetail').value.trim(),
+      notes: document.getElementById('taskNotes').value.trim(),
+    };
+    if (!data.label) return;
+    if (editingTaskId){
+      const idx = tasks.findIndex(x => x.id === editingTaskId);
+      if (idx > -1) tasks[idx] = Object.assign({}, tasks[idx], data);
+    } else {
+      data.id = uid('t');
+      tasks.push(data);
+    }
+    persistGanttData();
+    renderBoard();
+    closeTaskForm();
+  });
+  taskDeleteBtn.addEventListener('click', () => {
+    if (!editingTaskId) return;
+    if (!confirm('Delete this task?')) return;
+    tasks = tasks.filter(x => x.id !== editingTaskId);
+    persistGanttData();
+    renderBoard();
+    closeTaskForm();
+  });
+
+  const msModalBackdrop = document.getElementById('milestoneModalBackdrop');
+  const msForm = document.getElementById('milestoneForm');
+  const msFormEyebrow = document.getElementById('milestoneFormEyebrow');
+  const msDeleteBtn = document.getElementById('msDeleteBtn');
+  let editingMsId = null;
+
+  function openMilestoneForm(id){
+    editingMsId = id || null;
+    const m = id ? milestones.find(x => x.id === id) : null;
+    msFormEyebrow.textContent = m ? 'Edit milestone' : 'Add milestone';
+    document.getElementById('msLabel').value = m ? m.label : '';
+    document.getElementById('msDate').value = m ? m.date : '';
+    document.getElementById('msType').value = m ? m.type : 'deadline';
+    document.getElementById('msDetail').value = m ? (m.detail || '') : '';
+    msDeleteBtn.style.display = m ? 'inline-block' : 'none';
+    msModalBackdrop.classList.add('open');
+  }
+  function closeMilestoneForm(){ msModalBackdrop.classList.remove('open'); editingMsId = null; }
+
+  document.getElementById('addMilestoneBtn').addEventListener('click', () => openMilestoneForm(null));
+  document.getElementById('milestoneModalClose').addEventListener('click', closeMilestoneForm);
+  msModalBackdrop.addEventListener('click', (e) => { if (e.target === msModalBackdrop) closeMilestoneForm(); });
+
+  msForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const date = document.getElementById('msDate').value;
+    if (!date) return;
+    const data = {
+      label: document.getElementById('msLabel').value.trim(),
+      date: date,
+      type: document.getElementById('msType').value,
+      detail: document.getElementById('msDetail').value.trim(),
+    };
+    if (!data.label) return;
+    if (editingMsId){
+      const idx = milestones.findIndex(x => x.id === editingMsId);
+      if (idx > -1) milestones[idx] = Object.assign({}, milestones[idx], data);
+    } else {
+      data.id = uid('m');
+      milestones.push(data);
+    }
+    persistGanttData();
+    renderBoard();
+    renderOverlays();
+    closeMilestoneForm();
+  });
+  msDeleteBtn.addEventListener('click', () => {
+    if (!editingMsId) return;
+    if (!confirm('Delete this milestone?')) return;
+    milestones = milestones.filter(x => x.id !== editingMsId);
+    persistGanttData();
+    renderBoard();
+    renderOverlays();
+    closeMilestoneForm();
+  });
+
+  loadGanttData();
+
+  let properties = [];
+  let editingPropId = null;
+  let pendingImageData = null;
+
+  const propsList = document.getElementById('propsList');
+  const propsStatus = document.getElementById('propsStatus');
+  const propModalBackdrop = document.getElementById('propModalBackdrop');
+  const propForm = document.getElementById('propForm');
+  const propFormEyebrow = document.getElementById('propFormEyebrow');
+  const propDeleteBtn = document.getElementById('propDeleteBtn');
+  const propImageInput = document.getElementById('propImage');
+  const propImageFileInput = document.getElementById('propImageFile');
+
+  function sourceLabel(url){
+    if (!url) return 'Listing';
+    if (/rightmove\.co\.uk/i.test(url)) return 'Rightmove';
+    if (/zoopla\.co\.uk/i.test(url)) return 'Zoopla';
+    return 'Listing';
+  }
+  function youtubeId(url){
+    const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+    return m ? m[1] : null;
+  }
+  function isDirectVideo(url){ return /\.(mp4|webm|mov|ogg)(\?.*)?$/i.test(url); }
+  function renderVideo(url){
+    if (!url) return '';
+    const yid = youtubeId(url);
+    if (yid) return '<div class="prop-video"><iframe src="https://www.youtube.com/embed/' + yid + '" allowfullscreen loading="lazy"></iframe></div>';
+    if (isDirectVideo(url)) return '<div class="prop-video"><video controls src="' + escapeAttr(url) + '"></video></div>';
+    return '<div class="prop-video"><a href="' + escapeAttr(url) + '" target="_blank" rel="noopener">▶ Watch video</a></div>';
+  }
+  window.handleImgError = function(img){
+    const parent = img.parentElement;
+    parent.classList.add('placeholder');
+    parent.textContent = 'No preview available';
+  };
+  function resizeImageFile(file, maxDim, quality){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let w = img.width, h = img.height;
+          if (w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+          else if (h >= w && h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+  propImageFileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try{
+      pendingImageData = await resizeImageFile(file, 640, 0.72);
+      propImageInput.value = '';
+      propImageInput.placeholder = 'Photo selected — will replace any URL above';
+    } catch(err){
+      alert('Could not read that image.');
+    }
+  });
+
+  async function loadProperties(){
+    try{
+      const res = await window.storage.get('properties', false);
+      properties = (res && res.value) ? JSON.parse(res.value) : [];
+    } catch(e){
+      properties = [];
+    }
+    renderProperties();
+  }
+  async function persistProperties(){
+    try{
+      await window.storage.set('properties', JSON.stringify(properties), false);
+    } catch(e){
+      propsStatus.textContent = 'Could not save that change — it may not persist.';
+      propsStatus.style.display = 'block';
+      setTimeout(() => { if (properties.length) propsStatus.style.display = 'none'; }, 3500);
+    }
+    pushToDrive();
+  }
+
+  function buildPropCard(p){
+    const card = document.createElement('div');
+    card.className = 'prop-card';
+    const when = p.date ? (fmt(p.date) + (p.time ? ', ' + p.time : '')) : 'Not yet scheduled';
+    const warn = inTravelWindow(p.date) ? '<span class="prop-warning">⚠ Falls during your Uganda trip</span>' : '';
+    const thumbInner = p.image
+      ? '<img src="' + escapeAttr(p.image) + '" alt="' + escapeAttr(p.address) + '" onerror="handleImgError(this)">'
+      : 'No photo added';
+    card.innerHTML =
+      '<div class="prop-thumb' + (p.image ? '' : ' placeholder') + '">' + thumbInner + '</div>' +
+      '<div class="prop-body">' +
+        '<div class="prop-top-row">' +
+          '<h3 class="prop-address">' + escapeHtml(p.address) + '</h3>' +
+          '<span class="prop-badge">' + sourceLabel(p.link) + '</span>' +
+        '</div>' +
+        '<p class="prop-meta">Viewing: ' + when + '</p>' +
+        warn +
+        (p.link ? '<a class="prop-link" href="' + escapeAttr(p.link) + '" target="_blank" rel="noopener">View listing ↗</a>' : '') +
+        renderVideo(p.video) +
+        '<p class="prop-comments-display">' + (p.comments ? escapeHtml(p.comments) : 'No notes yet.') + '</p>' +
+        '<div class="prop-actions"><button class="btn-edit">Edit</button></div>' +
+      '</div>';
+    card.querySelector('.btn-edit').addEventListener('click', () => openPropForm(p.id));
+    return card;
+  }
+
+  function renderProperties(){
+    propsList.innerHTML = '';
+    if (properties.length === 0){
+      propsStatus.textContent = 'No viewings scheduled yet — add one below.';
+      propsStatus.style.display = 'block';
+      return;
+    }
+    propsStatus.style.display = 'none';
+    const unscheduled = properties.filter(p => !p.date);
+    const scheduled = properties.filter(p => p.date).sort((a, b) => a.date.localeCompare(b.date));
+
+    if (unscheduled.length){
+      const h = document.createElement('h3');
+      h.className = 'props-subheading';
+      h.textContent = 'Awaiting a viewing date (' + unscheduled.length + ')';
+      propsList.appendChild(h);
+      const grid = document.createElement('div');
+      grid.className = 'props-grid';
+      unscheduled.forEach(p => grid.appendChild(buildPropCard(p)));
+      propsList.appendChild(grid);
+    }
+    if (scheduled.length){
+      const h2 = document.createElement('h3');
+      h2.className = 'props-subheading';
+      h2.textContent = 'Scheduled viewings';
+      propsList.appendChild(h2);
+      const grid2 = document.createElement('div');
+      grid2.className = 'props-grid';
+      scheduled.forEach(p => grid2.appendChild(buildPropCard(p)));
+      propsList.appendChild(grid2);
+    }
+  }
+
+  function openPropForm(id){
+    editingPropId = id || null;
+    pendingImageData = null;
+    propImageFileInput.value = '';
+    const p = id ? properties.find(x => x.id === id) : null;
+    propFormEyebrow.textContent = p ? 'Edit viewing' : 'Add viewing';
+    document.getElementById('propAddress').value = p ? p.address : '';
+    document.getElementById('propLink').value = p ? (p.link || '') : '';
+    document.getElementById('propDate').value = p ? (p.date || '') : '';
+    document.getElementById('propTime').value = p ? (p.time || '') : '';
+    const imgVal = p ? (p.image || '') : '';
+    if (imgVal.indexOf('data:') === 0){
+      propImageInput.value = '';
+      propImageInput.placeholder = 'Photo already uploaded — pick a new file to replace it';
+    } else {
+      propImageInput.value = imgVal;
+      propImageInput.placeholder = 'Direct link to a photo';
+    }
+    document.getElementById('propVideo').value = p ? (p.video || '') : '';
+    document.getElementById('propComments').value = p ? (p.comments || '') : '';
+    propDeleteBtn.style.display = p ? 'inline-block' : 'none';
+    propModalBackdrop.classList.add('open');
+  }
+  function closePropForm(){
+    propModalBackdrop.classList.remove('open');
+    editingPropId = null;
+    pendingImageData = null;
+  }
+
+  document.getElementById('addPropertyBtn').addEventListener('click', () => openPropForm(null));
+  document.getElementById('propModalClose').addEventListener('click', closePropForm);
+  propModalBackdrop.addEventListener('click', (e) => { if (e.target === propModalBackdrop) closePropForm(); });
+
+  propForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    let imageValue;
+    const urlVal = propImageInput.value.trim();
+    if (pendingImageData){
+      imageValue = pendingImageData;
+    } else if (urlVal){
+      imageValue = urlVal;
+    } else if (editingPropId){
+      const existing = properties.find(x => x.id === editingPropId);
+      imageValue = existing ? (existing.image || '') : '';
+    } else {
+      imageValue = '';
+    }
+    const data = {
+      address: document.getElementById('propAddress').value.trim(),
+      link: document.getElementById('propLink').value.trim(),
+      date: document.getElementById('propDate').value,
+      time: document.getElementById('propTime').value,
+      image: imageValue,
+      video: document.getElementById('propVideo').value.trim(),
+      comments: document.getElementById('propComments').value.trim(),
+    };
+    if (!data.address) return;
+    if (editingPropId){
+      const idx = properties.findIndex(x => x.id === editingPropId);
+      if (idx > -1) properties[idx] = Object.assign({}, properties[idx], data);
+    } else {
+      data.id = uid('p');
+      properties.push(data);
+    }
+    persistProperties();
+    renderProperties();
+    closePropForm();
+  });
+
+  propDeleteBtn.addEventListener('click', () => {
+    if (!editingPropId) return;
+    if (!confirm('Delete this property viewing?')) return;
+    properties = properties.filter(x => x.id !== editingPropId);
+    persistProperties();
+    renderProperties();
+    closePropForm();
+  });
+
+  loadProperties();
+})();
+</script>
+</body>
+</html>
