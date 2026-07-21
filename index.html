@@ -177,7 +177,7 @@
   .prop-row{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;}
   .prop-row .prop-card{flex:0 0 300px;width:300px;}
   .prop-schools-panel{
-    flex:1 1 420px;min-width:280px;display:flex;flex-direction:column;gap:12px;
+    flex:0 1 460px;min-width:280px;max-width:480px;display:flex;flex-direction:column;gap:12px;
     background:var(--paper);color:var(--paper-ink);border-radius:8px;padding:14px 16px;box-shadow:0 4px 14px rgba(0,0,0,.28);
   }
   @media (max-width: 760px){
@@ -194,6 +194,10 @@
   .prop-address{font-family:'Source Serif 4', serif;font-size:16.5px;font-weight:700;margin:0;line-height:1.25;}
   .prop-badge{font-family:'IBM Plex Mono', monospace;font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;background:var(--paper-ink);color:var(--paper);padding:3px 6px;border-radius:3px;white-space:nowrap;flex:none;}
   .prop-meta{font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:var(--paper-ink-dim);margin:0;}
+  .prop-postcode{font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:var(--paper-ink-dim);margin:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .postcode-tag{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;padding:1px 6px;border-radius:3px;font-weight:700;}
+  .postcode-tag.actual{background:#D3E8D0;color:#1F5C1F;}
+  .postcode-tag.estimated{background:#F5E6C8;color:#7A5B12;}
   .prop-warning{display:inline-block;font-family:'IBM Plex Mono', monospace;font-size:10.5px;color:#7A2E1B;background:#F0D8C8;padding:3px 6px;border-radius:3px;width:fit-content;}
   .prop-status-badge{display:inline-block;font-family:'IBM Plex Mono', monospace;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;padding:3px 7px;border-radius:3px;width:fit-content;}
   .prop-status-badge.property-of-interest{background:#EAE3F2;color:#4A2E7A;}
@@ -209,9 +213,11 @@
   .btn-edit:hover{background:rgba(0,0,0,.06);}
 
   .near-block h4{font-family:'IBM Plex Mono', monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--paper-ink-dim);margin:0 0 6px;}
-  .near-table{width:100%;border-collapse:collapse;font-size:11.5px;}
-  .near-table th, .near-table td{padding:5px 6px;text-align:left;border-bottom:1px solid rgba(0,0,0,.1);}
-  .near-table th{font-family:'IBM Plex Mono', monospace;font-size:10px;letter-spacing:.03em;text-transform:uppercase;color:var(--paper-ink-dim);cursor:pointer;white-space:nowrap;user-select:none;}
+  .near-table{width:auto;max-width:100%;border-collapse:collapse;font-size:11.5px;}
+  .near-table th, .near-table td{padding:4px 4px;text-align:right;white-space:nowrap;border-bottom:1px solid rgba(0,0,0,.1);}
+  .near-table th:first-child, .near-table td:first-child{text-align:left;padding-left:0;white-space:normal;}
+  .near-table th:last-child, .near-table td:last-child{padding-right:0;}
+  .near-table th{font-family:'IBM Plex Mono', monospace;font-size:10px;letter-spacing:.03em;text-transform:uppercase;color:var(--paper-ink-dim);cursor:pointer;user-select:none;}
   .near-table th:hover{color:var(--paper-ink);}
   .near-status{font-size:12px;color:var(--paper-ink-dim);font-family:'Source Serif 4', serif;margin:0;}
   .near-guess-note{font-size:11.5px;color:#7A5B12;background:#F5E6C8;border-radius:5px;padding:6px 9px;margin:0;font-family:'Source Serif 4', serif;}
@@ -1645,6 +1651,10 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
     const thumbInner = p.image
       ? '<img src="' + escapeAttr(p.image) + '" alt="' + escapeAttr(p.address) + '" onerror="handleImgError(this)">'
       : 'No photo added';
+    const postcodeLine = p.postcode
+      ? '<p class="prop-postcode">Postcode: ' + escapeHtml(p.postcode) +
+        ' <span class="postcode-tag ' + (p.postcodeGuessed ? 'estimated">(estimated)' : 'actual">(actual)') + '</span></p>'
+      : '';
     card.innerHTML =
       '<div class="prop-thumb' + (p.image ? '' : ' placeholder') + '">' + thumbInner + '</div>' +
       '<div class="prop-body">' +
@@ -1652,6 +1662,7 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
           '<h3 class="prop-address">' + escapeHtml(p.address) + '</h3>' +
           '<span class="prop-badge">' + sourceLabel(p.link) + '</span>' +
         '</div>' +
+        postcodeLine +
         '<p class="prop-meta">Viewing: ' + when + '</p>' +
         statusBadge +
         warn +
