@@ -44,7 +44,7 @@
   }
   .title-eyebrow{font-size:11px;letter-spacing:.18em;color:var(--ink-dim);text-transform:uppercase;margin:0 0 6px;}
   h1{font-family:'Source Serif 4', serif;font-weight:700;font-size:clamp(24px,4vw,34px);margin:0 0 6px;color:var(--ink);letter-spacing:-0.01em;}
-  .subtitle{font-family:'Source Serif 4', serif;font-size:15px;color:var(--ink-dim);margin:0;max-width:48ch;}
+  .subtitle{font-family:'Source Serif 4', serif;font-size:15px;color:var(--ink-dim);margin:0;max-width:60ch;}
 
   .title-block{border:1px solid var(--grid-strong);background:var(--bg);min-width:220px;font-size:11px;line-height:1.5;}
   .title-block .tb-row{display:flex;justify-content:space-between;padding:7px 10px;border-bottom:1px solid var(--grid);gap:12px;}
@@ -52,6 +52,8 @@
   .title-block .tb-label{color:var(--ink-dim);letter-spacing:.06em;}
   .title-block .tb-value{color:var(--caution);font-weight:600;text-align:right;}
   .title-block .tb-value.status{color:var(--ink);font-weight:500;}
+  .title-block .tb-value.tb-editable{cursor:pointer;text-decoration:underline dotted;text-decoration-color:var(--ink-dim);}
+  .title-block .tb-value.tb-editable:hover{color:#fff;}
 
   .sync-bar{
     display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
@@ -175,13 +177,51 @@
   .prop-badge{font-family:'IBM Plex Mono', monospace;font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;background:var(--paper-ink);color:var(--paper);padding:3px 6px;border-radius:3px;white-space:nowrap;flex:none;}
   .prop-meta{font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:var(--paper-ink-dim);margin:0;}
   .prop-warning{display:inline-block;font-family:'IBM Plex Mono', monospace;font-size:10.5px;color:#7A2E1B;background:#F0D8C8;padding:3px 6px;border-radius:3px;width:fit-content;}
+  .prop-status-badge{display:inline-block;font-family:'IBM Plex Mono', monospace;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;padding:3px 7px;border-radius:3px;width:fit-content;}
+  .prop-status-badge.viewing-scheduled{background:#D9E6F2;color:#1F4E79;}
+  .prop-status-badge.viewing-complete{background:#DCEAE1;color:#1F5C3D;}
+  .prop-status-badge.offer-made{background:#F5E6C8;color:#7A5B12;}
+  .prop-status-badge.offer-rejected{background:#F0D0C8;color:#7A2E1B;}
+  .prop-status-badge.offer-accepted{background:#D3E8D0;color:#1F5C1F;}
   .prop-link{font-size:13px;color:#2D5C7A;text-decoration:underline;}
   .prop-video iframe, .prop-video video{width:100%;border-radius:6px;display:block;aspect-ratio:16/9;}
   .prop-video a{font-size:12.5px;color:#2D5C7A;}
   .prop-comments-display{font-family:'Source Serif 4', serif;font-size:13.5px;line-height:1.45;color:var(--paper-ink);background:rgba(0,0,0,.045);padding:8px 10px;border-radius:6px;white-space:pre-line;margin:2px 0 0;}
-  .prop-actions{display:flex;justify-content:flex-end;}
+  .prop-actions{display:flex;justify-content:flex-end;gap:8px;}
   .btn-edit{background:none;border:1px solid var(--paper-ink-dim);color:var(--paper-ink);font-family:'IBM Plex Mono', monospace;font-size:11px;padding:5px 10px;border-radius:4px;cursor:pointer;}
   .btn-edit:hover{background:rgba(0,0,0,.06);}
+
+  .btn-schools-toggle{background:none;border:1px solid var(--paper-ink-dim);color:var(--paper-ink);font-family:'IBM Plex Mono', monospace;font-size:11px;padding:5px 10px;border-radius:4px;cursor:pointer;}
+  .prop-schools{margin-top:2px;padding-top:10px;border-top:1px dashed rgba(0,0,0,.15);display:flex;flex-direction:column;gap:12px;}
+  .sch-search-link{font-size:12px;color:#2D5C7A;text-decoration:underline;}
+  .sch-block h4{font-family:'IBM Plex Mono', monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--paper-ink-dim);margin:0 0 6px;}
+  .sch-table{width:100%;border-collapse:collapse;font-size:11.5px;}
+  .sch-table th, .sch-table td{padding:5px 6px;text-align:left;border-bottom:1px solid rgba(0,0,0,.1);}
+  .sch-table th{font-family:'IBM Plex Mono', monospace;font-size:10px;letter-spacing:.03em;text-transform:uppercase;color:var(--paper-ink-dim);cursor:pointer;white-space:nowrap;user-select:none;}
+  .sch-table th:hover{color:var(--paper-ink);}
+  .sch-empty{color:var(--paper-ink-dim);font-style:italic;}
+  .sch-del{background:none;border:none;color:var(--critical);cursor:pointer;font-size:11px;padding:2px 4px;}
+  .sch-add-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;}
+  .sch-add-row input{font-family:'Source Serif 4', serif;font-size:12.5px;padding:5px 7px;border:1px solid rgba(0,0,0,.22);border-radius:4px;flex:1;min-width:70px;}
+  .btn-add-sch{background:none;border:1px solid var(--paper-ink-dim);color:var(--paper-ink);font-family:'IBM Plex Mono', monospace;font-size:10.5px;padding:5px 9px;border-radius:4px;cursor:pointer;white-space:nowrap;}
+
+  .todo-section{margin-top:38px;}
+  .todo-add-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .todo-add-row input[type=text]{flex:1;min-width:160px;}
+  .todo-add-row input{
+    font-family:'IBM Plex Mono', monospace;font-size:12.5px;padding:8px 10px;border:1px solid var(--grid-strong);
+    border-radius:5px;background:var(--bg);color:var(--ink);
+  }
+  .todo-list{display:flex;flex-direction:column;gap:6px;}
+  .todo-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--grid-strong);border-radius:6px;background:rgba(255,255,255,.02);}
+  .todo-check input{width:16px;height:16px;cursor:pointer;}
+  .todo-text{flex:1;font-size:13px;color:var(--ink);}
+  .todo-item.done .todo-text{text-decoration:line-through;color:var(--ink-dim);}
+  .todo-due{font-size:10.5px;color:var(--ink-dim);white-space:nowrap;}
+  .todo-due.overdue{color:var(--critical);font-weight:600;}
+  .todo-del{background:none;border:none;color:var(--ink-dim);font-size:13px;cursor:pointer;padding:2px 6px;}
+  .todo-del:hover{color:var(--critical);}
+  .todo-empty{font-size:12.5px;color:var(--ink-dim);}
 
   .prop-form-card{max-width:520px;}
   .field-label{display:block;font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:.04em;color:var(--paper-ink-dim);text-transform:uppercase;margin:14px 0 4px;}
@@ -205,12 +245,13 @@
     <div>
       <p class="title-eyebrow">Onward purchase &amp; remortgage</p>
       <h1>Completion Plan</h1>
-      <p class="subtitle">Editable plan — tap any bar or diamond to update it, or add new tasks and milestones as things change.</p>
+      <p class="subtitle">This page tracks progress on remortgaging the Southend flat, buying our onward property, and down-selecting candidate properties while tracking their viewings. Tap any bar or diamond to update it, or add new tasks and milestones as things change.</p>
     </div>
     <div class="title-block" id="titleBlock">
       <div class="tb-row"><span class="tb-label">Today</span><span class="tb-value" id="tbToday">—</span></div>
       <div class="tb-row"><span class="tb-label">Status</span><span class="tb-value status" id="tbStatus">—</span></div>
-      <div class="tb-row"><span class="tb-label">Target</span><span class="tb-value status" id="tbTarget">—</span></div>
+      <div class="tb-row"><span class="tb-label">Days to completion</span><span class="tb-value" id="tbDaysToCompletion">—</span></div>
+      <div class="tb-row"><span class="tb-label">Target Completion Date</span><span class="tb-value status tb-editable" id="tbTarget" title="Tap to edit">—</span></div>
     </div>
   </header>
 
@@ -225,7 +266,7 @@
     <span><i class="swatch" style="background:var(--lane-legal)"></i>Legal &amp; completion</span>
     <span><i class="swatch" style="background:var(--lane-adhoc)"></i>Ad hoc</span>
     <span><i class="swatch" style="background:var(--critical)"></i>Critical / urgent</span>
-    <span><i class="swatch diamond" style="background:var(--critical)"></i>Deadline</span>
+    <span><i class="swatch diamond" style="background:var(--critical)"></i>Key Date</span>
     <span><i class="swatch diamond" style="background:var(--done)"></i>Target date</span>
     <span>🧍 Pending</span>
     <span>🏃 In progress</span>
@@ -244,7 +285,7 @@
         <div class="track-cell" id="axisTrack"></div>
       </div>
       <div class="row milestones-row">
-        <div class="label-cell">Deadlines</div>
+        <div class="label-cell">Key Dates</div>
         <div class="track-cell" id="milestoneTrack"></div>
       </div>
       <div class="row">
@@ -267,6 +308,21 @@
   </div>
 
   <footer class="note">Tap a bar or diamond to edit it. Tap the small circle badge on a task to cycle 🧍 → 🏃 → 🏁. Scroll sideways to see July–December.</footer>
+
+  <section class="todo-section">
+    <div class="props-header">
+      <div>
+        <p class="title-eyebrow">Quick tasks</p>
+        <h2 class="props-h2">To-Do</h2>
+      </div>
+    </div>
+    <div class="todo-add-row">
+      <input type="text" id="todoText" placeholder="Add a task…">
+      <input type="date" id="todoDue">
+      <button class="btn-add" id="todoAddBtn">+ Add</button>
+    </div>
+    <div id="todoList" class="todo-list"></div>
+  </section>
 
   <section class="properties-section">
     <div class="props-header">
@@ -380,6 +436,16 @@
           <input type="time" id="propTime">
         </label>
       </div>
+      <label class="field-label">Status
+        <select id="propStatus">
+          <option value="">—</option>
+          <option value="viewing-scheduled">Viewing Scheduled</option>
+          <option value="viewing-complete">Viewing Complete</option>
+          <option value="offer-made">Offer Made</option>
+          <option value="offer-rejected">Offer Rejected</option>
+          <option value="offer-accepted">Offer Accepted</option>
+        </select>
+      </label>
       <label class="field-label">Image URL (optional)
         <input type="url" id="propImage" placeholder="Direct link to a photo">
       </label>
@@ -430,6 +496,36 @@
   function escapeAttr(s){ return (s || '').replace(/"/g, '&quot;'); }
   function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
   function uid(prefix){ return prefix + Date.now() + Math.floor(Math.random() * 1000); }
+
+  // window.storage only exists inside Claude's own artifact preview. On a real host
+  // (GitHub Pages, etc.) it's undefined, so we shim the same API on top of localStorage
+  // — everything else in this file can keep calling window.storage.get/set unchanged.
+  if (typeof window.storage === 'undefined'){
+    window.storage = {
+      async get(key, shared){
+        const raw = localStorage.getItem((shared ? 'shared:' : 'local:') + key);
+        if (raw === null) throw new Error('not found');
+        return { key: key, value: raw, shared: !!shared };
+      },
+      async set(key, value, shared){
+        localStorage.setItem((shared ? 'shared:' : 'local:') + key, value);
+        return { key: key, value: value, shared: !!shared };
+      },
+      async delete(key, shared){
+        localStorage.removeItem((shared ? 'shared:' : 'local:') + key);
+        return { key: key, deleted: true, shared: !!shared };
+      },
+      async list(prefix, shared){
+        const p = (shared ? 'shared:' : 'local:') + (prefix || '');
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++){
+          const k = localStorage.key(i);
+          if (k.indexOf(p) === 0) keys.push(k.slice((shared ? 'shared:' : 'local:').length));
+        }
+        return { keys: keys, prefix: prefix, shared: !!shared };
+      }
+    };
+  }
 
   // ================= Google Drive sync =================
   // 1. Create an OAuth Client ID in Google Cloud Console (APIs & Services > Credentials).
@@ -514,13 +610,15 @@
         tasks = parsed.tasks || tasks;
         milestones = parsed.milestones || milestones;
         properties = parsed.properties || properties;
+        todos = parsed.todos || todos;
       } else {
-        driveFileId = await driveCreateFile(JSON.stringify({tasks: tasks, milestones: milestones, properties: properties}));
+        driveFileId = await driveCreateFile(JSON.stringify({tasks: tasks, milestones: milestones, properties: properties, todos: todos}));
       }
       driveReady = true;
       renderBoard();
       renderOverlays();
       renderProperties();
+      renderTodos();
       setSyncStatus('Connected — synced to Google Drive', 'on');
       signInBtn.textContent = 'Sign out';
     } catch(e){
@@ -532,7 +630,7 @@
   async function pushToDrive(){
     if (!accessToken || !driveReady) return;
     try{
-      const payload = JSON.stringify({tasks: tasks, milestones: milestones, properties: properties});
+      const payload = JSON.stringify({tasks: tasks, milestones: milestones, properties: properties, todos: todos});
       if (!driveFileId){
         driveFileId = await driveCreateFile(payload);
       } else {
@@ -755,27 +853,62 @@
 
     document.getElementById('tbToday').textContent = now.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
     let status;
-    if (now < departD) status = Math.ceil((departD - now) / dayMs) + ' days to departure';
+    if (now < departD) status = Math.ceil((departD - now) / dayMs) + ' days to flight to Ug';
     else if (now <= returnD) status = 'Abroad — back in ' + Math.ceil((returnD - now) / dayMs) + ' days';
     else if (now <= targetD) status = Math.ceil((targetD - now) / dayMs) + ' days to target';
     else status = 'Target date passed';
     document.getElementById('tbStatus').textContent = status;
+
+    const daysToCompletion = Math.ceil((targetD - now) / dayMs);
+    document.getElementById('tbDaysToCompletion').textContent = daysToCompletion > 0
+      ? (daysToCompletion + ' days')
+      : (daysToCompletion === 0 ? 'Today' : (Math.abs(daysToCompletion) + ' days overdue'));
+
     document.getElementById('tbTarget').textContent = fmt(targetStr);
+  }
+  document.getElementById('tbTarget').addEventListener('click', () => openMilestoneForm('m5'));
+
+  const MILESTONE_LEVEL_STEP = 44;
+  const MILESTONE_OVERLAP_PX = 100;
+  function computeMilestoneLevels(){
+    // Greedy bin-packing: sort by x position, assign each milestone to the lowest
+    // vertical level whose last-placed item isn't within the overlap threshold.
+    // This lets any number of close/same-date milestones stack one below another.
+    const withPx = milestones.map(m => ({ id: m.id, xPx: xPct(m.date) / 100 * TRACK_W }))
+      .sort((a, b) => a.xPx - b.xPx);
+    const levelLastX = [];
+    const levelOf = {};
+    withPx.forEach(item => {
+      let lvl = 0;
+      while (lvl < levelLastX.length && Math.abs(levelLastX[lvl] - item.xPx) < MILESTONE_OVERLAP_PX){ lvl++; }
+      levelLastX[lvl] = item.xPx;
+      levelOf[item.id] = lvl;
+    });
+    return { levelOf, levelCount: levelLastX.length };
   }
 
   function renderBoard(){
     Object.values(content).forEach(c => { c.innerHTML = ''; });
 
+    const { levelOf, levelCount } = computeMilestoneLevels();
+    trackEls.milestone.style.minHeight = levelCount > 1
+      ? (12 + (levelCount - 1) * MILESTONE_LEVEL_STEP + 40) + 'px'
+      : '';
+
     milestones.forEach(m => {
       const pct = xPct(m.date);
+      const lvl = levelOf[m.id] || 0;
+      const diaTop = 12 + lvl * MILESTONE_LEVEL_STEP;
       const dia = document.createElement('div');
       dia.className = 'milestone ' + m.type;
       dia.style.left = pct + '%';
+      dia.style.top = diaTop + 'px';
       dia.addEventListener('click', () => openMilestoneForm(m.id));
       content.milestone.appendChild(dia);
       const lab = document.createElement('div');
       lab.className = 'milestone-label';
       lab.style.left = pct + '%';
+      lab.style.top = (diaTop + 16) + 'px';
       lab.textContent = m.label;
       lab.addEventListener('click', () => openMilestoneForm(m.id));
       content.milestone.appendChild(lab);
@@ -971,6 +1104,78 @@
 
   loadGanttData();
 
+  // ================= To-Do checklist =================
+  let todos = [];
+  const todoListEl = document.getElementById('todoList');
+  const todoTextEl = document.getElementById('todoText');
+  const todoDueEl = document.getElementById('todoDue');
+  const todoAddBtn = document.getElementById('todoAddBtn');
+
+  function renderTodos(){
+    todoListEl.innerHTML = '';
+    if (!todos.length){
+      const empty = document.createElement('p');
+      empty.className = 'todo-empty';
+      empty.textContent = 'Nothing on the list yet.';
+      todoListEl.appendChild(empty);
+      return;
+    }
+    const sorted = todos.slice().sort((a, b) => {
+      if (!!a.done !== !!b.done) return a.done ? 1 : -1;
+      if (a.due && b.due) return a.due.localeCompare(b.due);
+      if (a.due) return -1;
+      if (b.due) return 1;
+      return 0;
+    });
+    const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+    sorted.forEach(t => {
+      const row = document.createElement('div');
+      row.className = 'todo-item' + (t.done ? ' done' : '');
+      const overdue = t.due && !t.done && new Date(t.due + 'T00:00:00') < today0;
+      row.innerHTML =
+        '<label class="todo-check"><input type="checkbox" ' + (t.done ? 'checked' : '') + '></label>' +
+        '<span class="todo-text">' + escapeHtml(t.text) + '</span>' +
+        (t.due ? '<span class="todo-due' + (overdue ? ' overdue' : '') + '">' + fmt(t.due) + '</span>' : '') +
+        '<button type="button" class="todo-del" title="Delete">✕</button>';
+      row.querySelector('.todo-check input').addEventListener('change', () => {
+        t.done = !t.done;
+        persistTodos();
+        renderTodos();
+      });
+      row.querySelector('.todo-del').addEventListener('click', () => {
+        todos = todos.filter(x => x.id !== t.id);
+        persistTodos();
+        renderTodos();
+      });
+      todoListEl.appendChild(row);
+    });
+  }
+  async function loadTodos(){
+    try{
+      const res = await window.storage.get('todos', false);
+      todos = (res && res.value) ? JSON.parse(res.value) : [];
+    } catch(e){
+      todos = [];
+    }
+    renderTodos();
+  }
+  async function persistTodos(){
+    try{ await window.storage.set('todos', JSON.stringify(todos), false); } catch(e){ /* non-fatal */ }
+    pushToDrive();
+  }
+  function addTodoFromInputs(){
+    const text = todoTextEl.value.trim();
+    if (!text) return;
+    todos.push({ id: uid('td'), text: text, due: todoDueEl.value || '', done: false });
+    todoTextEl.value = '';
+    todoDueEl.value = '';
+    persistTodos();
+    renderTodos();
+  }
+  todoAddBtn.addEventListener('click', addTodoFromInputs);
+  todoTextEl.addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); addTodoFromInputs(); } });
+  loadTodos();
+
   let properties = [];
   let editingPropId = null;
   let pendingImageData = null;
@@ -983,6 +1188,110 @@
   const propDeleteBtn = document.getElementById('propDeleteBtn');
   const propImageInput = document.getElementById('propImage');
   const propImageFileInput = document.getElementById('propImageFile');
+
+  const STATUS_LABELS = {
+    'viewing-scheduled': 'Viewing Scheduled',
+    'viewing-complete': 'Viewing Complete',
+    'offer-made': 'Offer Made',
+    'offer-rejected': 'Offer Rejected',
+    'offer-accepted': 'Offer Accepted',
+  };
+
+  // ================= Schools lookup (assisted, not automated — see note in chat) =================
+  let schoolSortState = {};   // key: propId+':'+type -> {col, dir}
+  let expandedSchools = {};   // key: propId -> bool, transient (not persisted)
+
+  function ensureSchools(p){
+    if (!p.schools) p.schools = { primary: [], secondary: [] };
+    if (!p.schools.primary) p.schools.primary = [];
+    if (!p.schools.secondary) p.schools.secondary = [];
+    return p.schools;
+  }
+  function sortedSchoolRows(propId, type, rows){
+    const state = schoolSortState[propId + ':' + type];
+    if (!state || !state.col) return rows;
+    const col = state.col, dir = state.dir;
+    return rows.slice().sort((a, b) => {
+      const av = parseFloat(a[col]), bv = parseFloat(b[col]);
+      const aNum = !isNaN(av), bNum = !isNaN(bv);
+      if (aNum && bNum) return dir === 'asc' ? av - bv : bv - av;
+      if (aNum) return -1;
+      if (bNum) return 1;
+      const as = (a[col] || '').toString(), bs = (b[col] || '').toString();
+      return dir === 'asc' ? as.localeCompare(bs) : bs.localeCompare(as);
+    });
+  }
+  window.sortSchools = function(propId, type, col){
+    const key = propId + ':' + type;
+    const cur = schoolSortState[key] || { col: null, dir: 'desc' };
+    const dir = (cur.col === col && cur.dir === 'desc') ? 'asc' : 'desc';
+    schoolSortState[key] = { col: col, dir: dir };
+    renderProperties();
+  };
+  window.toggleSchools = function(propId){
+    expandedSchools[propId] = !expandedSchools[propId];
+    renderProperties();
+  };
+  window.addSchoolRow = function(propId, type){
+    const p = properties.find(x => x.id === propId);
+    if (!p) return;
+    const s = ensureSchools(p);
+    const name = document.getElementById('schAdd_name_' + propId + '_' + type).value.trim();
+    if (!name) return;
+    const rank = document.getElementById('schAdd_rank_' + propId + '_' + type).value.trim();
+    const measure = document.getElementById('schAdd_measure_' + propId + '_' + type).value.trim();
+    const dist = document.getElementById('schAdd_dist_' + propId + '_' + type).value.trim();
+    const row = { id: uid('sch'), name: name, rank: rank, distance: dist };
+    if (type === 'primary') row.ks2 = measure; else row.progress8 = measure;
+    s[type].push(row);
+    persistProperties();
+    renderProperties();
+  };
+  window.deleteSchoolRow = function(propId, type, rowId){
+    const p = properties.find(x => x.id === propId);
+    if (!p || !p.schools) return;
+    p.schools[type] = p.schools[type].filter(r => r.id !== rowId);
+    persistProperties();
+    renderProperties();
+  };
+  function renderSchoolTable(p, type){
+    const s = ensureSchools(p);
+    const measureLabel = type === 'primary' ? 'KS2' : 'Progress 8';
+    const measureKey = type === 'primary' ? 'ks2' : 'progress8';
+    const sorted = sortedSchoolRows(p.id, type, s[type]);
+    const state = schoolSortState[p.id + ':' + type] || {};
+    const arrow = (col) => state.col === col ? (state.dir === 'asc' ? ' ▲' : ' ▼') : '';
+    let rowsHtml = sorted.map(r =>
+      '<tr><td>' + escapeHtml(r.name) + '</td><td>' + (escapeHtml(r.rank) || '—') + '</td><td>' + (escapeHtml(r[measureKey]) || '—') + '</td><td>' + (r.distance ? escapeHtml(r.distance) + ' mi' : '—') + '</td>' +
+      '<td><button type="button" class="sch-del" title="Remove" onclick="deleteSchoolRow(\'' + p.id + '\',\'' + type + '\',\'' + r.id + '\')">✕</button></td></tr>'
+    ).join('');
+    if (!sorted.length) rowsHtml = '<tr><td colspan="5" class="sch-empty">No schools added yet.</td></tr>';
+    return '<div class="sch-block">' +
+      '<h4>' + (type === 'primary' ? 'Primary schools' : 'Secondary schools') + '</h4>' +
+      '<table class="sch-table"><thead><tr>' +
+      '<th onclick="sortSchools(\'' + p.id + '\',\'' + type + '\',\'name\')">School Name' + arrow('name') + '</th>' +
+      '<th onclick="sortSchools(\'' + p.id + '\',\'' + type + '\',\'rank\')">National Rank' + arrow('rank') + '</th>' +
+      '<th onclick="sortSchools(\'' + p.id + '\',\'' + type + '\',\'' + measureKey + '\')">' + measureLabel + arrow(measureKey) + '</th>' +
+      '<th onclick="sortSchools(\'' + p.id + '\',\'' + type + '\',\'distance\')">Distance' + arrow('distance') + '</th>' +
+      '<th></th></tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
+      '<div class="sch-add-row">' +
+      '<input type="text" id="schAdd_name_' + p.id + '_' + type + '" placeholder="School name">' +
+      '<input type="text" id="schAdd_rank_' + p.id + '_' + type + '" placeholder="Rank">' +
+      '<input type="text" id="schAdd_measure_' + p.id + '_' + type + '" placeholder="' + measureLabel + '">' +
+      '<input type="text" id="schAdd_dist_' + p.id + '_' + type + '" placeholder="Miles">' +
+      '<button type="button" class="btn-add-sch" onclick="addSchoolRow(\'' + p.id + '\',\'' + type + '\')">+ Add</button>' +
+      '</div></div>';
+  }
+  function renderSchoolsSection(p){
+    const isOpen = !!expandedSchools[p.id];
+    const searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent('primary and secondary schools near ' + p.address + ' ranking Ofsted KS2 Progress 8');
+    if (!isOpen) return '';
+    return '<div class="prop-schools">' +
+      '<a class="sch-search-link" href="' + escapeAttr(searchUrl) + '" target="_blank" rel="noopener">🔎 Search schools near this address ↗</a>' +
+      renderSchoolTable(p, 'primary') +
+      renderSchoolTable(p, 'secondary') +
+      '</div>';
+  }
 
   function sourceLabel(url){
     if (!url) return 'Listing';
@@ -1066,6 +1375,7 @@
     card.className = 'prop-card';
     const when = p.date ? (fmt(p.date) + (p.time ? ', ' + p.time : '')) : 'Not yet scheduled';
     const warn = inTravelWindow(p.date) ? '<span class="prop-warning">⚠ Falls during your Uganda trip</span>' : '';
+    const statusBadge = p.status ? '<span class="prop-status-badge ' + p.status + '">' + STATUS_LABELS[p.status] + '</span>' : '';
     const thumbInner = p.image
       ? '<img src="' + escapeAttr(p.image) + '" alt="' + escapeAttr(p.address) + '" onerror="handleImgError(this)">'
       : 'No photo added';
@@ -1077,13 +1387,16 @@
           '<span class="prop-badge">' + sourceLabel(p.link) + '</span>' +
         '</div>' +
         '<p class="prop-meta">Viewing: ' + when + '</p>' +
+        statusBadge +
         warn +
         (p.link ? '<a class="prop-link" href="' + escapeAttr(p.link) + '" target="_blank" rel="noopener">View listing ↗</a>' : '') +
         renderVideo(p.video) +
         '<p class="prop-comments-display">' + (p.comments ? escapeHtml(p.comments) : 'No notes yet.') + '</p>' +
-        '<div class="prop-actions"><button class="btn-edit">Edit</button></div>' +
+        renderSchoolsSection(p) +
+        '<div class="prop-actions"><button type="button" class="btn-schools-toggle">' + (expandedSchools[p.id] ? 'Hide schools' : 'Schools') + '</button><button class="btn-edit">Edit</button></div>' +
       '</div>';
     card.querySelector('.btn-edit').addEventListener('click', () => openPropForm(p.id));
+    card.querySelector('.btn-schools-toggle').addEventListener('click', () => window.toggleSchools(p.id));
     return card;
   }
 
@@ -1130,6 +1443,7 @@
     document.getElementById('propLink').value = p ? (p.link || '') : '';
     document.getElementById('propDate').value = p ? (p.date || '') : '';
     document.getElementById('propTime').value = p ? (p.time || '') : '';
+    document.getElementById('propStatus').value = p ? (p.status || '') : '';
     const imgVal = p ? (p.image || '') : '';
     if (imgVal.indexOf('data:') === 0){
       propImageInput.value = '';
@@ -1172,6 +1486,7 @@
       link: document.getElementById('propLink').value.trim(),
       date: document.getElementById('propDate').value,
       time: document.getElementById('propTime').value,
+      status: document.getElementById('propStatus').value,
       image: imageValue,
       video: document.getElementById('propVideo').value.trim(),
       comments: document.getElementById('propComments').value.trim(),
