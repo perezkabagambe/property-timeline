@@ -42,16 +42,33 @@ trailing slash.
 (`computeMilestoneLevels`) so any number of close/same-date milestones stack
 vertically instead of overlapping. Row height grows dynamically.
 
-**Schools lookup — deliberately NOT automated.** Each property card has a
-Primary/Secondary schools table (School Name, Snobe Rating, Distance, both
-sortable). This is manual/assisted by design: Snobe.co.uk has no public API,
-cross-origin fetch would be blocked by CORS even if attempted, and — the
-deciding factor — Snobe's Terms of Service explicitly prohibit automated
-extraction/reverse-engineering of their content. The UI links out to
-`snobe.co.uk/primary-schools-near-me` and `.../secondary-schools-near-me`;
-the user reads the numbers off Snobe's own site and quick-enters them. Do not
-attempt to build a scraper or CORS workaround for this — it was explicitly
-ruled out, not just deferred.
+**Schools lookup — automated, backed by an embedded DfE dataset.** `window.SCHOOLS_DB`
+(a ~1.3MB blob near the top of `index.html`, in its own `<script>` tag before the
+main one) holds England's state-funded schools: ~14.8k primary (name, postcode,
+lat/lon, national rank, KS2 rating) and ~3.3k secondary (name, postcode, lat/lon,
+national rank, Progress 8, Attainment 8). Rows are plain arrays, not objects
+(`meta.primaryCols` / `meta.secondaryCols` give the column order) — this was a
+deliberate size optimization, don't refactor to keyed objects. Source data: DfE's
+`compare-school-performance.service.gov.uk` (Open Government Licence) + GIAS for
+postcodes; coordinates via `postcodes.io`. Regenerating this blob means re-running
+the fetch/geocode pipeline described in chat history, not hand-editing it.
+Full source citations and methodology live in `UK_School_Performance_Database.xlsx`
+(the standalone deliverable this was built from — not deployed, just a reference).
+
+Each property has a `postcode` field (own form input, separate from the free-text
+`address`). On add/edit, `ensurePropertySchools` geocodes it via `postcodes.io`
+(free, no key, CORS-friendly), computes Haversine distance against every row in
+`SCHOOLS_DB`, and caches the nearest 5 primary + 5 secondary onto
+`p.nearestSchools`. `backfillAllPropertySchools` runs the same thing for existing
+properties on load and after a Drive sync merge — it tries to extract a postcode
+from `address` via regex if `p.postcode` is blank. Two sortable tables (primary
+above secondary) render in a `.prop-schools-panel` beside the card, inside a
+`.prop-row` flex container — replaced the old `.props-grid` card-only layout.
+
+This replaced an earlier, deliberately-manual Snobe.co.uk-based design (Snobe's ToS
+prohibits automated scraping of their rankings). The DfE data above is a different,
+openly-licensed source, so that restriction doesn't apply here — but the Snobe ToS
+restriction itself still stands if anyone ever proposes pulling from Snobe directly.
 
 **Property statuses:** Viewing Scheduled / Viewing Complete / Offer Made /
 Offer Rejected / Offer Accepted — a dropdown per property, shown as a colored
