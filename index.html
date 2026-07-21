@@ -221,6 +221,15 @@
   .todo-due.overdue{color:var(--critical);font-weight:600;}
   .todo-del{background:none;border:none;color:var(--ink-dim);font-size:13px;cursor:pointer;padding:2px 6px;}
   .todo-del:hover{color:var(--critical);}
+  .todo-edit{background:none;border:none;color:var(--ink-dim);font-size:13px;cursor:pointer;padding:2px 6px;}
+  .todo-edit:hover{color:var(--caution);}
+  .todo-text.editable{cursor:pointer;}
+  .todo-text.editable:hover{text-decoration:underline dotted;text-decoration-color:var(--ink-dim);}
+  .todo-item.editing{flex-wrap:wrap;}
+  .todo-edit-text{flex:1;min-width:160px;font-family:'IBM Plex Mono', monospace;font-size:12.5px;padding:6px 8px;border:1px solid var(--grid-strong);border-radius:5px;background:var(--bg);color:var(--ink);}
+  .todo-edit-due{font-family:'IBM Plex Mono', monospace;font-size:12.5px;padding:6px 8px;border:1px solid var(--grid-strong);border-radius:5px;background:var(--bg);color:var(--ink);}
+  .todo-save{background:none;border:1px solid var(--done);color:var(--done);font-size:12px;cursor:pointer;padding:5px 9px;border-radius:5px;}
+  .todo-cancel{background:none;border:1px solid var(--ink-dim);color:var(--ink-dim);font-size:12px;cursor:pointer;padding:5px 9px;border-radius:5px;}
   .todo-empty{font-size:12.5px;color:var(--ink-dim);}
 
   .prop-form-card{max-width:520px;}
@@ -1131,17 +1140,53 @@
     sorted.forEach(t => {
       const row = document.createElement('div');
       row.className = 'todo-item' + (t.done ? ' done' : '');
+
+      if (t._editing){
+        row.classList.add('editing');
+        row.innerHTML =
+          '<input type="text" class="todo-edit-text" value="' + escapeHtml(t.text) + '">' +
+          '<input type="date" class="todo-edit-due" value="' + (t.due || '') + '">' +
+          '<button type="button" class="todo-save" title="Save">✓ Save</button>' +
+          '<button type="button" class="todo-cancel" title="Cancel">✕ Cancel</button>';
+        const editTextEl = row.querySelector('.todo-edit-text');
+        const editDueEl = row.querySelector('.todo-edit-due');
+        const save = () => {
+          const text = editTextEl.value.trim();
+          if (!text) return;
+          t.text = text;
+          t.due = editDueEl.value || '';
+          delete t._editing;
+          persistTodos();
+          renderTodos();
+        };
+        row.querySelector('.todo-save').addEventListener('click', save);
+        row.querySelector('.todo-cancel').addEventListener('click', () => {
+          delete t._editing;
+          renderTodos();
+        });
+        editTextEl.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter'){ e.preventDefault(); save(); }
+          if (e.key === 'Escape'){ delete t._editing; renderTodos(); }
+        });
+        todoListEl.appendChild(row);
+        return;
+      }
+
       const overdue = t.due && !t.done && new Date(t.due + 'T00:00:00') < today0;
       row.innerHTML =
         '<label class="todo-check"><input type="checkbox" ' + (t.done ? 'checked' : '') + '></label>' +
-        '<span class="todo-text">' + escapeHtml(t.text) + '</span>' +
+        '<span class="todo-text editable" title="Tap to edit">' + escapeHtml(t.text) + '</span>' +
         (t.due ? '<span class="todo-due' + (overdue ? ' overdue' : '') + '">' + fmt(t.due) + '</span>' : '') +
+        '<button type="button" class="todo-edit" title="Edit">✎</button>' +
         '<button type="button" class="todo-del" title="Delete">✕</button>';
       row.querySelector('.todo-check input').addEventListener('change', () => {
         t.done = !t.done;
         persistTodos();
         renderTodos();
       });
+      const startEdit = () => { t._editing = true; renderTodos(); };
+      row.querySelector('.todo-text').addEventListener('click', startEdit);
+      row.querySelector('.todo-edit').addEventListener('click', startEdit);
       row.querySelector('.todo-del').addEventListener('click', () => {
         todos = todos.filter(x => x.id !== t.id);
         persistTodos();
