@@ -609,7 +609,7 @@
     return await res.text();
   }
 
-  async function syncFromDrive(){
+  async function syncFromDrive(reloadAfter){
     setSyncStatus('Connecting to Google Drive…', 'neutral');
     try{
       driveFileId = await driveFindFile();
@@ -624,6 +624,12 @@
         driveFileId = await driveCreateFile(JSON.stringify({tasks: tasks, milestones: milestones, properties: properties, todos: todos}));
       }
       driveReady = true;
+      if (reloadAfter){
+        // Full reload guarantees every view (board, overlays, properties, todos,
+        // title-block dates) reflects the freshly-merged Drive data consistently.
+        location.reload();
+        return;
+      }
       renderBoard();
       renderOverlays();
       renderProperties();
@@ -651,13 +657,16 @@
     }
   }
 
+  let isManualSignIn = false;
+
   function handleAuthResponse(resp){
     if (resp.error){
       setSyncStatus('Not connected — changes save to this browser only', 'off');
       return;
     }
     accessToken = resp.access_token;
-    syncFromDrive();
+    syncFromDrive(isManualSignIn);
+    isManualSignIn = false;
   }
 
   function initGoogleAuth(){
@@ -689,6 +698,7 @@
       setSyncStatus('Google sign-in isn\u2019t configured on this page yet', 'off');
       return;
     }
+    isManualSignIn = true;
     tokenClient.requestAccessToken({ prompt: 'consent' });
   });
 
