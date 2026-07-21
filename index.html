@@ -552,11 +552,46 @@
   const GOOGLE_CLIENT_ID = '1005270309634-f3is3dp5u973k3jsrs6mmecb908asl7p.apps.googleusercontent.com';
   const DRIVE_FILE_NAME = 'property-timeline-data.json';
   const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+  const TOKEN_STORAGE_KEY = 'gdrive_access_token';
 
   let tokenClient = null;
   let accessToken = null;
   let driveFileId = null;
   let driveReady = false;
+
+  function storeToken(token, expiresInSec){
+    try{
+      sessionStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify({
+        token: token,
+        expiresAt: Date.now() + ((expiresInSec || 3600) * 1000)
+      }));
+    } catch(e){ /* non-fatal */ }
+  }
+  function loadStoredToken(){
+    try{
+      const raw = sessionStorage.getItem(TOKEN_STORAGE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      // Treat as expired a minute early so we don't hand Drive a token that dies mid-request.
+      if (!data.token || !data.expiresAt || Date.now() >= data.expiresAt - 60000) return null;
+      return data.token;
+    } catch(e){ return null; }
+  }
+  function clearStoredToken(){
+    try{ sessionStorage.removeItem(TOKEN_STORAGE_KEY); } catch(e){ /* non-fatal */ }
+  }
+  function driveAuthError(){
+    const e = new Error('Drive auth expired');
+    e.driveAuthExpired = true;
+    return e;
+  }
+  function signOutLocally(){
+    accessToken = null;
+    driveFileId = null;
+    driveReady = false;
+    clearStoredToken();
+    signInBtn.textContent = 'Sign in with Google';
+  }
 
   const syncStatusEl = document.getElementById('syncStatus');
   const syncDotEl = document.getElementById('syncDot');
@@ -575,6 +610,7 @@
     const res = await fetch('https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id,name)&spaces=drive', {
       headers: { Authorization: 'Bearer ' + accessToken }
     });
+    if (res.status === 401) throw driveAuthError();
     if (!res.ok) throw new Error('Drive lookup failed');
     const data = await res.json();
     return (data.files && data.files[0]) ? data.files[0].id : null;
@@ -594,6 +630,7 @@
       },
       body: body
     });
+    if (res.status === 401) throw driveAuthError();
     if (!res.ok) throw new Error('Drive create failed');
     const data = await res.json();
     return data.id;
@@ -607,12 +644,14 @@
       },
       body: contentStr
     });
+    if (res.status === 401) throw driveAuthError();
     if (!res.ok) throw new Error('Drive update failed');
   }
   async function driveReadFile(fileId){
     const res = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
       headers: { Authorization: 'Bearer ' + accessToken }
     });
+    if (res.status === 401) throw driveAuthError();
     if (!res.ok) throw new Error('Drive read failed');
     return await res.text();
   }
@@ -646,7 +685,12 @@
       signInBtn.textContent = 'Sign out';
     } catch(e){
       driveReady = false;
-      setSyncStatus('Signed in, but Drive sync failed — saving locally only', 'off');
+      if (e && e.driveAuthExpired){
+        signOutLocally();
+        setSyncStatus('Google session expired — sign in again to keep syncing', 'off');
+      } else {
+        setSyncStatus('Signed in, but Drive sync failed — saving locally only', 'off');
+      }
     }
   }
 
@@ -661,7 +705,12 @@
       }
       setSyncStatus('Connected — synced to Google Drive', 'on');
     } catch(e){
-      setSyncStatus('Connected, but last change failed to sync — saved locally only', 'off');
+      if (e && e.driveAuthExpired){
+        signOutLocally();
+        setSyncStatus('Google session expired — sign in again to keep syncing', 'off');
+      } else {
+        setSyncStatus('Connected, but last change failed to sync — saved locally only', 'off');
+      }
     }
   }
 
@@ -673,6 +722,7 @@
       return;
     }
     accessToken = resp.access_token;
+    storeToken(accessToken, resp.expires_in);
     syncFromDrive(isManualSignIn);
     isManualSignIn = false;
   }
@@ -687,17 +737,21 @@
       scope: DRIVE_SCOPE,
       callback: handleAuthResponse
     });
-    // Attempt a silent reconnect if there's already a Google session — never an interactive popup on load.
+    // Reuse a still-valid token from this browser session — no popup or iframe round-trip needed.
+    const stored = loadStoredToken();
+    if (stored){
+      accessToken = stored;
+      syncFromDrive(false);
+      return;
+    }
+    // Otherwise attempt a silent reconnect if there's already a Google session — never an interactive popup on load.
     tokenClient.requestAccessToken({ prompt: '' });
   }
 
   signInBtn.addEventListener('click', () => {
     if (accessToken){
       google.accounts.oauth2.revoke(accessToken, () => {
-        accessToken = null;
-        driveFileId = null;
-        driveReady = false;
-        signInBtn.textContent = 'Sign in with Google';
+        signOutLocally();
         setSyncStatus('Not connected — changes save to this browser only', 'off');
       });
       return;
