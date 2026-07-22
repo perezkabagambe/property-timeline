@@ -1872,7 +1872,25 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
     });
     return tesseractLoadPromise;
   }
-  const PRICE_RE = /(£\s?[\d][\d,]*(?:\.\d+)?|(?:offers over|guide price|oiro|poa|price on application|offers in (?:the )?region of|asking price)[^\n£]{0,20}£?\s?[\d,]*)/i;
+  const PRICE_MONEY_RE = /£\s?[\d][\d,]*(?:\.\d+)?/;
+  const PRICE_QUALIFIER_RE = /^(offers over|guide price|oiro|poa|price on application|offers in (?:the )?region of|asking price|fixed price|shared ownership|from)\b/i;
+  function guessPriceLine(lines){
+    // Anchor on the line with the actual £ amount — Rightmove/Zoopla often put a bare
+    // qualifier ("Guide Price") on its own line above the number, so stitch them together
+    // rather than risk grabbing just the qualifier with no figure.
+    for (let i = 0; i < lines.length; i++){
+      const line = lines[i];
+      if (!PRICE_MONEY_RE.test(line)) continue;
+      const prev = lines[i - 1] ? lines[i - 1].trim() : '';
+      if (prev && PRICE_QUALIFIER_RE.test(prev) && !PRICE_MONEY_RE.test(prev)){
+        return (prev + ' ' + line.trim()).replace(/\s+/g, ' ').trim();
+      }
+      return line.trim();
+    }
+    // No £ amount anywhere — a bare qualifier line (e.g. "POA") is still worth surfacing.
+    for (const line of lines){ if (PRICE_QUALIFIER_RE.test(line.trim())) return line.trim(); }
+    return null;
+  }
   function guessAddressLine(lines){
     const bad = /^(rightmove|zoopla|save|share|book a viewing|added (today|yesterday|on)|marketed by|sold|let agreed|under offer|guide price|offers over|call|email|request details|floorplan|virtual tour|features|description|nearest stations?|council tax)/i;
     let best = null;
@@ -1896,8 +1914,7 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
       let addressGuess = null;
       for (const line of lines){ if (UK_POSTCODE_RE.test(line)){ addressGuess = line; break; } }
       if (!addressGuess) addressGuess = guessAddressLine(lines);
-      let priceGuess = null;
-      for (const line of lines){ const m = line.match(PRICE_RE); if (m){ priceGuess = line.trim(); break; } }
+      const priceGuess = guessPriceLine(lines);
       renderExtractSuggestions(addressGuess, priceGuess, text);
       extractOcrStatus.textContent = '';
     } catch(e){
