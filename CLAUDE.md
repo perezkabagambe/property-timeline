@@ -62,7 +62,14 @@ property in priority order: (1) the entered `postcode`, geocoded via `postcodes.
 (2) failing that, a full postcode extracted from `address` via regex; (3) failing
 that, the whole `address` string sent to Nominatim (OpenStreetMap's free geocoder)
 to handle partial Rightmove/Zoopla-style addresses like "Mithras Gardens, Wavendon
-Gate, Milton Keynes MK7" that only carry an outward code. Whatever postcode gets
+Gate, Milton Keynes MK7" that only carry an outward code. `geocodeFreeText` retries
+with progressively shorter queries (drops one trailing comma-separated segment at
+a time via `geocodeFreeTextOnce`) if a query returns nothing — confirmed by hand
+that Nominatim can fail an address outright when it carries extra trailing context
+together (e.g. "62 Hawley Drive, Leybourne, West Malling" matches nothing) even
+though a shorter version of the same address matches immediately ("62 Hawley
+Drive, Leybourne" alone does) — so never assume a single Nominatim miss means the
+address is truly ungeocodable. Whatever postcode gets
 resolved from (2) or (3) is written back into `p.postcode` with `p.postcodeGuessed
 = true`, shown to the user as a small "auto-detected" note, and cleared back to
 `false` the next time they save the edit form (whether or not they changed it) —

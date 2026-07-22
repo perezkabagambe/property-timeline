@@ -420,7 +420,7 @@
     <div id="propsStatus" class="props-status">Loading saved viewings…</div>
     <div id="propsList"></div>
   </section>
-  <footer class="app-footer">Build: 22 Jul 2026, 22:03 UTC</footer>
+  <footer class="app-footer">Build: 22 Jul 2026, 22:12 UTC</footer>
 </div>
 
 <div class="modal-backdrop" id="taskModalBackdrop">
@@ -1560,21 +1560,38 @@ window.HOSPITALS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":75
     nominatimQueue = result.catch(() => {}).then(() => new Promise(r => setTimeout(r, 1100)));
     return result;
   }
+  async function geocodeFreeTextOnce(query){
+    try{
+      const url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&countrycodes=gb&q=' + encodeURIComponent(query);
+      const res = await fetch(url, { headers: { 'Accept-Language': 'en-GB' } });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data || !data.length) return null;
+      const r = data[0];
+      const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
+      let postcode = (r.address && r.address.postcode) ? r.address.postcode.toUpperCase() : null;
+      if (!postcode) postcode = await nearestPostcodeFor(lat, lon);
+      return { lat: lat, lon: lon, postcode: postcode };
+    } catch(e){ return null; }
+  }
   async function geocodeFreeText(address){
-    const query = address.replace(UK_OUTWARD_TRAILING_RE, '').replace(/,\s*$/, '').trim() || address;
+    const base = address.replace(UK_OUTWARD_TRAILING_RE, '').replace(/,\s*$/, '').trim() || address;
     return queueNominatim(async () => {
-      try{
-        const url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&countrycodes=gb&q=' + encodeURIComponent(query);
-        const res = await fetch(url, { headers: { 'Accept-Language': 'en-GB' } });
-        if (!res.ok) return null;
-        const data = await res.json();
-        if (!data || !data.length) return null;
-        const r = data[0];
-        const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
-        let postcode = (r.address && r.address.postcode) ? r.address.postcode.toUpperCase() : null;
-        if (!postcode) postcode = await nearestPostcodeFor(lat, lon);
-        return { lat: lat, lon: lon, postcode: postcode };
-      } catch(e){ return null; }
+      // Nominatim's free-text matcher can return nothing for an address that carries extra
+      // trailing context (e.g. a village AND its parent town together) even though each part
+      // is independently findable — confirmed by hand: "62 Hawley Drive, Leybourne, West
+      // Malling" matches nothing, but "62 Hawley Drive, Leybourne" alone matches immediately.
+      // So retry with progressively less specific queries, dropping one trailing comma-
+      // separated segment at a time, instead of giving up after a single failed match.
+      let segments = base.split(',').map(s => s.trim()).filter(Boolean);
+      while (segments.length){
+        const result = await geocodeFreeTextOnce(segments.join(', '));
+        if (result) return result;
+        if (segments.length <= 1) break;
+        segments = segments.slice(0, -1);
+        await new Promise(r => setTimeout(r, 1100));
+      }
+      return null;
     });
   }
   function nearestFromDb(lat, lon, rows, n){
