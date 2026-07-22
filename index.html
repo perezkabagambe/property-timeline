@@ -151,6 +151,11 @@
   .gantt-tooltip.show{opacity:1;}
 
   footer.note{margin-top:14px;font-size:11.5px;color:var(--ink-dim);}
+  .app-footer{
+    margin-top:40px;padding-top:14px;border-top:1px solid var(--grid-strong);
+    font-family:'IBM Plex Mono', monospace;font-size:10.5px;letter-spacing:.04em;
+    color:var(--ink-dim);text-align:center;
+  }
 
   .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(6,10,16,.65);z-index:50;align-items:flex-end;justify-content:center;padding:0;}
   .modal-backdrop.open{display:flex;}
@@ -400,6 +405,7 @@
     <div id="propsStatus" class="props-status">Loading saved viewings…</div>
     <div id="propsList"></div>
   </section>
+  <footer class="app-footer">Build: 22 Jul 2026, 00:26 UTC</footer>
 </div>
 
 <div class="modal-backdrop" id="taskModalBackdrop">

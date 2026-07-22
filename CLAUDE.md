@@ -114,6 +114,9 @@ stale image/suggestion state never leaks between add/edit sessions.
 - No CI/build — edits are committed straight to the file that's served.
 - Test after any change to the Drive sync or storage code: it's easy to
   silently break persistence without an error surfacing.
+- The `.app-footer` "Build:" timestamp at the bottom of the page is a plain
+  hardcoded string (no real build step to generate it from) — bump it to the
+  current date/time whenever committing a change to `index.html`.
 
 ## Working conventions
 - Keep everything in the one file unless the user asks to split it up.
