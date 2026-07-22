@@ -81,6 +81,22 @@ prohibits automated scraping of their rankings). The DfE data above is a differe
 openly-licensed source, so that restriction doesn't apply here — but the Snobe ToS
 restriction itself still stands if anyone ever proposes pulling from Snobe directly.
 
+**Nearest train stations** — same pattern, third table under the two schools
+tables. `window.STATIONS_DB` (~115KB, its own `<script>` tag right after
+`SCHOOLS_DB`) holds 2,639 Great Britain rail stations — name, postcode, lat/lon,
+positional arrays again (`meta.cols`). Source: DfT's **NaPTAN** (National Public
+Transport Access Nodes), filtered to `StopType=RLY` + `Status=active`, deduped by
+normalized name (the raw dataset has a handful of legitimate multi-node stations
+like Clapham Junction, plus ~9 Elizabeth Line stations whose RLY record had null
+coordinates — patched from their paired RSE/entrance record; see chat history for
+which). NaPTAN has no postcode field, so postcodes here are *reverse*-geocoded
+from NaPTAN's own surveyed coordinates via `postcodes.io`'s bulk `geolocations`
+endpoint — the inverse of the forward geocoding used elsewhere. `applyNearestSchools`
+computes the nearest 3 into `p.nearestStations` (same `nearestFromDb` helper,
+same cache-by-postcode invalidation as schools) whenever it resolves a property's
+location, so this rides on the exact same postcode-resolution pipeline above —
+no separate lookup path to maintain.
+
 **Property statuses:** Property of Interest (default for new entries) / Viewing
 Scheduled / Viewing Complete / Offer Made / Offer Rejected / Offer Accepted —
 a dropdown per property, shown as a colored badge.
