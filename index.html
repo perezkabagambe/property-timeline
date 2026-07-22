@@ -234,6 +234,11 @@
   .near-table-compact{font-size:10.5px;max-width:260px;}
   .near-table-compact th, .near-table-compact td{padding:3px 4px;}
   .near-table-compact th{font-size:9px;}
+  .imd-line{font-family:'IBM Plex Mono', monospace;font-size:13px;color:var(--paper-ink);margin:0 0 4px;display:flex;align-items:center;gap:8px;}
+  .imd-tag{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:3px;font-weight:700;}
+  .imd-tag.high{background:#F0D0C8;color:#7A2E1B;}
+  .imd-tag.mid{background:#F5E6C8;color:#7A5B12;}
+  .imd-tag.low{background:#D3E8D0;color:#1F5C1F;}
   .near-status{font-size:12px;color:var(--paper-ink-dim);font-family:'Source Serif 4', serif;margin:0;}
   .near-guess-note{font-size:11.5px;color:#7A5B12;background:#F5E6C8;border-radius:5px;padding:6px 9px;margin:0;font-family:'Source Serif 4', serif;}
 
@@ -411,7 +416,7 @@
     <div id="propsStatus" class="props-status">Loading saved viewings…</div>
     <div id="propsList"></div>
   </section>
-  <footer class="app-footer">Build: 22 Jul 2026, 16:49 UTC</footer>
+  <footer class="app-footer">Build: 22 Jul 2026, 17:41 UTC</footer>
 </div>
 
 <div class="modal-backdrop" id="taskModalBackdrop">
@@ -1511,7 +1516,13 @@ window.STATIONS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":263
       if (res.ok){
         const data = await res.json();
         if (data && data.result){
-          const coords = { lat: data.result.latitude, lon: data.result.longitude };
+          const coords = {
+            lat: data.result.latitude, lon: data.result.longitude,
+            // Piggyback IMD rank + country off this same lookup — postcodes.io already
+            // includes it, so no extra request or dataset needed for the deprivation block.
+            imdRank: (data.result.index_of_multiple_deprivation != null) ? data.result.index_of_multiple_deprivation : null,
+            country: data.result.country || null,
+          };
           geocodeCache[key] = coords;
           return coords;
         }
@@ -1562,7 +1573,15 @@ window.STATIONS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":263
       .sort((a, b) => a.distance - b.distance)
       .slice(0, n);
   }
-  function applyNearestSchools(p, postcode, coords, guessed){
+  // England's IMD2019 ranks exactly 32,844 LSOAs (verified directly against the official
+  // File 1 data — ceil(rank / (32844/10)) reproduces its Decile column with zero mismatches
+  // across all 32,844 rows). Wales/Scotland/Northern Ireland run their own separate, non-
+  // comparable indices, so deciles are only computed for England.
+  const IMD_TOTAL_LSOAS = 32844;
+  function imdDecileFromRank(rank){
+    return Math.min(10, Math.max(1, Math.ceil(rank / (IMD_TOTAL_LSOAS / 10))));
+  }
+  async function applyNearestSchools(p, postcode, coords, guessed){
     const nearPrimary = nearestFromDb(coords.lat, coords.lon, window.SCHOOLS_DB.primary, 5);
     const nearSecondary = nearestFromDb(coords.lat, coords.lon, window.SCHOOLS_DB.secondary, 5);
     p.postcode = postcode;
@@ -1578,6 +1597,18 @@ window.STATIONS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":263
         postcode: postcode,
         stations: nearStations.map(x => ({ name: x.row[0], distance: x.distance })),
       };
+    }
+    // The Nominatim/free-text path resolves coords without an IMD rank attached — backfill
+    // it with one more (cached) postcode lookup now that we have a real postcode string.
+    let imdSource = coords;
+    if (imdSource.imdRank === undefined && postcode){
+      const pcData = await geocodePostcode(postcode);
+      if (pcData) imdSource = pcData;
+    }
+    if (imdSource.imdRank != null && imdSource.country === 'England'){
+      p.imd = { postcode: postcode, rank: imdSource.imdRank, decile: imdDecileFromRank(imdSource.imdRank), country: imdSource.country };
+    } else {
+      p.imd = { postcode: postcode, rank: imdSource.imdRank || null, decile: null, country: imdSource.country || null };
     }
   }
   async function ensurePropertySchools(propId){
@@ -1595,11 +1626,12 @@ window.STATIONS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":263
         p.schoolsLoading = false;
         p.nearestSchools = { postcode: normalizedPc, error: true, primary: [], secondary: [] };
         p.nearestStations = { postcode: normalizedPc, error: true, stations: [] };
+        p.imd = { postcode: normalizedPc, error: true };
         persistProperties();
         renderProperties();
         return;
       }
-      applyNearestSchools(p, normalizedPc, coords, false);
+      await applyNearestSchools(p, normalizedPc, coords, false);
       p.schoolsLoading = false;
       persistProperties();
       renderProperties();
@@ -1614,7 +1646,7 @@ window.STATIONS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":263
       const coords = await geocodePostcode(extracted);
       p.schoolsLoading = false;
       if (coords){
-        applyNearestSchools(p, extracted, coords, true);
+        await applyNearestSchools(p, extracted, coords, true);
         persistProperties();
         renderProperties();
         return;
@@ -1630,11 +1662,12 @@ window.STATIONS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":263
     if (!guess){
       p.nearestSchools = { postcode: null, error: true, primary: [], secondary: [] };
       p.nearestStations = { postcode: null, error: true, stations: [] };
+      p.imd = { postcode: null, error: true };
       persistProperties();
       renderProperties();
       return;
     }
-    applyNearestSchools(p, guess.postcode || '', guess, true);
+    await applyNearestSchools(p, guess.postcode || '', guess, true);
     persistProperties();
     renderProperties();
   }
@@ -1718,6 +1751,28 @@ window.STATIONS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":263
       '<tr><td>' + escapeHtml(r.name) + '</td><td>' + r.distance.toFixed(1) + ' mi</td></tr>'
     ).join('');
     return open('<table class="near-table near-table-compact"><thead><tr>' + head + '</tr></thead><tbody>' + bodyRows + '</tbody></table>');
+  }
+  function imdBand(decile){
+    if (decile <= 3) return { label: 'more deprived', cls: 'high' };
+    if (decile <= 7) return { label: 'average', cls: 'mid' };
+    return { label: 'less deprived', cls: 'low' };
+  }
+  function renderImdBlock(p){
+    const open = (html) => '<div class="near-block"><h4>Index of Multiple Deprivation</h4>' + html + '</div>';
+    if (p.schoolsLoading) return open('<p class="near-status">Looking up deprivation data…</p>');
+    const imd = p.imd;
+    if (!imd) return open('<p class="near-status">Looking up deprivation data…</p>');
+    if (imd.error) return open('<p class="near-status">Could not work out a postcode for this address — try entering one directly.</p>');
+    if (imd.decile == null){
+      const where = imd.country ? ' (this postcode is in ' + escapeHtml(imd.country) + ')' : '';
+      return open('<p class="near-status">Not available outside England' + where + ' — England, Wales, Scotland and Northern Ireland use separate, non-comparable deprivation indices.</p>');
+    }
+    const band = imdBand(imd.decile);
+    return open(
+      '<p class="imd-line">Decile <strong>' + imd.decile + '</strong> of 10 <span class="imd-tag ' + band.cls + '">' + band.label + '</span></p>' +
+      '<p class="near-status">National rank ' + imd.rank.toLocaleString('en-GB') + ' of ' + IMD_TOTAL_LSOAS.toLocaleString('en-GB') +
+      ' — decile 1 is most deprived, 10 is least deprived. England only.</p>'
+    );
   }
 
   function sourceLabel(url){
@@ -2108,7 +2163,7 @@ window.STATIONS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":263
         (p.nearestSchools.postcode ? ' as <strong>' + escapeHtml(p.nearestSchools.postcode) + '</strong>' : '') +
         ' from the address — open Edit to correct it once you know the exact one.</p>';
     }
-    panel.innerHTML = guessNote + renderNearTable(p, 'primary') + renderNearTable(p, 'secondary') + renderStationsTable(p);
+    panel.innerHTML = guessNote + renderNearTable(p, 'primary') + renderNearTable(p, 'secondary') + renderStationsTable(p) + renderImdBlock(p);
     row.appendChild(panel);
     return row;
   }

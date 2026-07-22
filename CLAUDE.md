@@ -97,6 +97,24 @@ same cache-by-postcode invalidation as schools) whenever it resolves a property'
 location, so this rides on the exact same postcode-resolution pipeline above —
 no separate lookup path to maintain.
 
+**Index of Multiple Deprivation (IMD)** — fourth block under stations, `p.imd =
+{postcode, rank, decile, country}`. No embedded dataset needed here: `postcodes.io`
+already returns `index_of_multiple_deprivation` (a rank, not a decile) on every
+postcode lookup it's already doing for geocoding, so `geocodePostcode` just
+captures it alongside lat/lon. `imdDecileFromRank` converts rank → decile via
+`ceil(rank / (32844/10))` — verified directly against the official IoD2019 File 1
+data (gov.uk) that this reproduces its published Decile column exactly, zero
+mismatches across all 32,844 English LSOAs. **England only, deliberately**:
+England/Wales/Scotland/Northern Ireland each run independent, non-comparable IMD
+scales (confirmed in postcodes.io's own schema docs), and 32,844 is only the
+correct denominator for England's — a postcode outside England shows a "not
+available outside England" message rather than a wrong or misleading number.
+The Nominatim free-text path resolves coordinates without ever calling
+`api.postcodes.io/postcodes/{postcode}` (it uses Nominatim + a coordinate-based
+reverse lookup instead), so `applyNearestSchools` makes one extra `geocodePostcode`
+call to backfill the IMD rank in that case — cached by postcode, so it doesn't
+repeat on subsequent loads.
+
 **Property statuses:** Property of Interest (default for new entries) / Viewing
 Scheduled / Viewing Complete / Offer Made / Offer Rejected / Offer Accepted —
 a dropdown per property, shown as a colored badge.
