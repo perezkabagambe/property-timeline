@@ -416,7 +416,7 @@
     <div id="propsStatus" class="props-status">Loading saved viewings…</div>
     <div id="propsList"></div>
   </section>
-  <footer class="app-footer">Build: 22 Jul 2026, 17:41 UTC</footer>
+  <footer class="app-footer">Build: 22 Jul 2026, 19:09 UTC</footer>
 </div>
 
 <div class="modal-backdrop" id="taskModalBackdrop">
@@ -1611,6 +1611,14 @@ window.STATIONS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":263
       p.imd = { postcode: postcode, rank: imdSource.imdRank || null, decile: null, country: imdSource.country || null };
     }
   }
+  // Checks every data source we compute for a property is present, error-free, and keyed to
+  // the given postcode — not just nearestSchools. Otherwise a property that already had
+  // nearestSchools cached from before a newer field (e.g. imd) existed would skip the whole
+  // pipeline forever and that field would never backfill.
+  function hasFreshLocationData(p, normalizedPc){
+    const fresh = (obj) => obj && obj.postcode === normalizedPc && !obj.error;
+    return fresh(p.nearestSchools) && fresh(p.nearestStations) && fresh(p.imd);
+  }
   async function ensurePropertySchools(propId){
     const p = properties.find(x => x.id === propId);
     if (!p || !window.SCHOOLS_DB) return;
@@ -1618,7 +1626,7 @@ window.STATIONS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":263
     const enteredPostcode = (p.postcode || '').trim();
     if (enteredPostcode){
       const normalizedPc = enteredPostcode.toUpperCase().replace(/\s+/g, ' ').trim();
-      if (p.nearestSchools && p.nearestSchools.postcode === normalizedPc && !p.nearestSchools.error) return;
+      if (hasFreshLocationData(p, normalizedPc)) return;
       p.schoolsLoading = true;
       renderProperties();
       const coords = await geocodePostcode(normalizedPc);
@@ -1677,8 +1685,8 @@ window.STATIONS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":263
       const enteredPostcode = (p.postcode || '').trim();
       if (enteredPostcode){
         const normalizedPc = enteredPostcode.toUpperCase().replace(/\s+/g, ' ').trim();
-        if (p.nearestSchools && p.nearestSchools.postcode === normalizedPc && !p.nearestSchools.error) return;
-      } else if (p.nearestSchools && !p.nearestSchools.error){
+        if (hasFreshLocationData(p, normalizedPc)) return;
+      } else if (p.nearestSchools && !p.nearestSchools.error && p.nearestStations && !p.nearestStations.error && p.imd && !p.imd.error){
         return; // already have a best-guess result and nothing's changed
       }
       ensurePropertySchools(p.id);
