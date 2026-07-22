@@ -407,11 +407,11 @@
         <button class="btn-add" id="addPropertyBtn">+ Add property</button>
       </div>
     </div>
-    <p class="props-note">Paste a Rightmove or Zoopla link for each property, or add one before you've booked a viewing — it'll show as "not yet scheduled" until you set a date. For a photo, paste a direct image address or upload one from your device.</p>
+    <p class="props-note" id="propsNote">Paste a Rightmove or Zoopla link for each property, or add one before you've booked a viewing — it'll show as "not yet scheduled" until you set a date. For a photo, paste a direct image address or upload one from your device.</p>
     <div id="propsStatus" class="props-status">Loading saved viewings…</div>
     <div id="propsList"></div>
   </section>
-  <footer class="app-footer">Build: 22 Jul 2026, 16:37 UTC</footer>
+  <footer class="app-footer">Build: 22 Jul 2026, 16:49 UTC</footer>
 </div>
 
 <div class="modal-backdrop" id="taskModalBackdrop">
@@ -1439,6 +1439,17 @@ window.STATIONS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":263
 
   const propsList = document.getElementById('propsList');
   const propsStatus = document.getElementById('propsStatus');
+  (function appendDbCountsToPropsNote(){
+    const note = document.getElementById('propsNote');
+    if (!note || !window.SCHOOLS_DB || !window.STATIONS_DB) return;
+    const primary = window.SCHOOLS_DB.meta.primaryTotal;
+    const secondary = window.SCHOOLS_DB.meta.secondaryTotal;
+    const stations = window.STATIONS_DB.meta.total;
+    const fmt = (n) => n.toLocaleString('en-GB');
+    note.textContent += ' Nearby schools and stations are looked up from an embedded database of ' +
+      fmt(primary) + ' primary schools, ' + fmt(secondary) + ' secondary schools, and ' +
+      fmt(stations) + ' train stations across Great Britain.';
+  })();
   const propModalBackdrop = document.getElementById('propModalBackdrop');
   const propForm = document.getElementById('propForm');
   const propFormEyebrow = document.getElementById('propFormEyebrow');
