@@ -405,7 +405,7 @@
     <div id="propsStatus" class="props-status">Loading saved viewings…</div>
     <div id="propsList"></div>
   </section>
-  <footer class="app-footer">Build: 22 Jul 2026, 00:26 UTC</footer>
+  <footer class="app-footer">Build: 22 Jul 2026, 00:38 UTC</footer>
 </div>
 
 <div class="modal-backdrop" id="taskModalBackdrop">
@@ -1898,14 +1898,28 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
     return null;
   }
   function guessAddressLine(lines){
+    // OCR run over a whole screenshot (not just the text strip) frequently hallucinates
+    // fragmented, text-like noise out of photo textures — brick, roof tiles, foliage. That
+    // noise is short, punctuation-heavy, and full of 1-2 letter fragments, so filter hard
+    // against those shapes rather than just checking length/letter-ratio.
     const bad = /^(rightmove|zoopla|save|share|book a viewing|added (today|yesterday|on)|marketed by|sold|let agreed|under offer|guide price|offers over|call|email|request details|floorplan|virtual tour|features|description|nearest stations?|council tax)/i;
     let best = null;
     for (const line of lines){
       const t = line.trim();
       if (t.length < 6 || t.length > 90) continue;
       if (bad.test(t) || /£/.test(t)) continue;
+      if (/[_~^`|{}\[\]<>]/.test(t)) continue; // punctuation that essentially never appears in a real address — a strong noise signal
+      const words = t.split(/\s+/).filter(Boolean);
+      if (words.length < 2) continue; // a real address line is normally multiple words
       const letters = (t.match(/[a-zA-Z]/g) || []).length;
-      if (letters < t.length * 0.5) continue;
+      if (letters < t.length * 0.7) continue;
+      const shortFrags = words.filter(w => w.replace(/[^a-zA-Z]/g, '').length <= 2).length;
+      if (shortFrags / words.length > 0.34) continue; // too many tiny fragments = garbled noise, not real words
+      const noVowelWord = words.some(w => {
+        const letters2 = w.replace(/[^a-zA-Z]/g, '');
+        return letters2.length >= 3 && !/[aeiouAEIOU]/.test(letters2);
+      });
+      if (noVowelWord) continue; // a 3+ letter "word" with zero vowels is essentially never real English
       if (!best || t.length > best.length) best = t;
     }
     return best;
