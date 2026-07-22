@@ -3,7 +3,8 @@
 ## What this is
 A single-file static site (`index.html`) tracking a remortgage + onward property
 purchase, hosted on GitHub Pages at https://perezkabagambe.github.io/property-timeline/
-No build step, no dependencies, no framework — plain HTML/CSS/JS in one file.
+No build step, no framework — plain HTML/CSS/JS in one file. One lazy-loaded
+external dependency (Tesseract.js, for the screenshot OCR feature) — see below.
 
 ## The real-world plan this app tracks
 - Keeping the existing flat in Southend, remortgaging it (not selling) to fund the
@@ -83,6 +84,29 @@ restriction itself still stands if anyone ever proposes pulling from Snobe direc
 **Property statuses:** Property of Interest (default for new entries) / Viewing
 Scheduled / Viewing Complete / Offer Made / Offer Rejected / Offer Accepted —
 a dropdown per property, shown as a colored badge.
+
+**Automated property data extraction** (the "Automated Property Data Extraction"
+panel at the top of the Add/Edit property form) lets the user paste, drop, or
+upload a screenshot of a listing and pulls a photo crop + address/price
+suggestions out of it — entirely client-side, no server, no request to
+Rightmove/Zoopla ever made (the image is one the user already captured, so this
+doesn't implicate the scraping-ToS restriction above). Two independent pieces:
+- **Photo**: a hand-rolled canvas crop tool (`extractCanvas` + pointer events,
+  no cropping library) — the user drags a box over the screenshot, "Use
+  selection as photo" resizes/compresses it exactly like the existing file-
+  upload path and sets `pendingImageData`, so it flows through the normal save
+  logic unchanged.
+- **Address/price**: OCR via **Tesseract.js**, lazy-loaded from a CDN
+  (`loadTesseract`) only when an image is first provided — this is the one real
+  external dependency in the app beyond Google's own sign-in script. Extracted
+  text is pattern-matched (`PRICE_RE`, `guessAddressLine`, and a priority check
+  against `UK_POSTCODE_RE`) into suggestion chips the user must click "Use" to
+  apply — OCR is never auto-applied to the form fields, since accuracy on
+  arbitrary screenshots is inherently best-effort, not reliable enough to trust
+  silently.
+
+`resetExtractPanel()` runs on both opening and closing the property modal so
+stale image/suggestion state never leaks between add/edit sessions.
 
 ## Deployment
 - Deployed file must be named `index.html` at the repo root (GitHub Pages

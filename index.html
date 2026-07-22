@@ -198,6 +198,7 @@
   .prop-body{padding:14px 14px 16px;display:flex;flex-direction:column;gap:8px;}
   .prop-top-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
   .prop-address{font-family:'Source Serif 4', serif;font-size:16.5px;font-weight:700;margin:0;line-height:1.25;}
+  .prop-price{font-family:'IBM Plex Mono', monospace;font-size:14px;font-weight:700;color:#1F5C3D;margin:0;}
   .prop-badge{font-family:'IBM Plex Mono', monospace;font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;background:var(--paper-ink);color:var(--paper);padding:3px 6px;border-radius:3px;white-space:nowrap;flex:none;}
   .prop-meta{font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:var(--paper-ink-dim);margin:0;}
   .prop-postcode{font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:var(--paper-ink-dim);margin:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
@@ -265,6 +266,30 @@
   .prop-image-preview-wrap{margin-top:8px;}
   .prop-image-preview{display:block;max-width:100%;max-height:160px;border-radius:6px;object-fit:cover;}
   .prop-image-preview-error{font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:#7A2E1B;background:#F0D8C8;padding:6px 9px;border-radius:5px;margin:0;}
+
+  .extract-panel{border:1px dashed rgba(0,0,0,.25);border-radius:8px;padding:12px;margin-bottom:16px;background:rgba(0,0,0,.02);}
+  .extract-dropzone{
+    border:1px dashed rgba(0,0,0,.3);border-radius:6px;padding:16px;text-align:center;
+    font-family:'Source Serif 4', serif;font-size:13px;color:var(--paper-ink-dim);cursor:pointer;
+  }
+  .extract-dropzone.dragover{background:rgba(0,0,0,.05);border-color:var(--paper-ink-dim);}
+  .extract-dropzone p{margin:0;}
+  .extract-browse{color:#2D5C7A;text-decoration:underline;cursor:pointer;}
+  .extract-hint{font-size:11.5px;color:var(--paper-ink-dim);margin:0 0 8px;font-family:'Source Serif 4', serif;}
+  .extract-canvas-wrap{max-width:100%;overflow:auto;background:rgba(0,0,0,.04);border-radius:6px;}
+  .extract-canvas-wrap canvas{display:block;max-width:100%;cursor:crosshair;touch-action:none;}
+  .extract-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .extract-ocr-status{font-family:'IBM Plex Mono', monospace;font-size:11px;color:var(--paper-ink-dim);}
+  .extract-suggestions{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+  .extract-suggestion{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    background:#fff;border:1px solid rgba(0,0,0,.15);border-radius:5px;padding:6px 8px;font-size:12.5px;
+  }
+  .extract-suggestion-text{font-family:'IBM Plex Mono', monospace;font-size:11.5px;overflow-wrap:anywhere;}
+  .extract-suggestion-label{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--paper-ink-dim);margin-right:6px;}
+  .extract-use-btn{background:none;border:1px solid var(--paper-ink-dim);color:var(--paper-ink);font-family:'IBM Plex Mono', monospace;font-size:10.5px;padding:4px 8px;border-radius:4px;cursor:pointer;white-space:nowrap;}
+  .extract-raw-toggle{font-size:11px;color:#2D5C7A;text-decoration:underline;cursor:pointer;background:none;border:none;padding:0;font-family:'IBM Plex Mono', monospace;}
+  .extract-raw-text{font-family:'IBM Plex Mono', monospace;font-size:10.5px;white-space:pre-wrap;background:rgba(0,0,0,.04);border-radius:5px;padding:8px;max-height:120px;overflow:auto;margin-top:6px;}
   .field-label input[type=checkbox]{width:auto;display:inline-block;margin:0 6px 0 0;}
   .field-row{display:flex;gap:10px;}
   .field-row .field-label{flex:1;}
@@ -461,6 +486,26 @@
     <button class="modal-close" id="propModalClose">CLOSE ✕</button>
     <p class="modal-eyebrow" id="propFormEyebrow">Add viewing</p>
     <form id="propForm">
+      <div class="extract-panel">
+        <p class="field-label" style="margin-top:0;">Automated Property Data Extraction</p>
+        <div id="extractDropzone" class="extract-dropzone" tabindex="0">
+          <p>Paste a listing screenshot (Ctrl/Cmd+V), drop an image here, or
+            <label class="extract-browse">choose a file<input type="file" id="extractFileInput" accept="image/*" style="display:none;"></label>
+          </p>
+        </div>
+        <div id="extractWorkspace" class="extract-workspace" style="display:none;">
+          <p class="extract-hint">Drag a box around the property photo, then use it below. Text suggestions appear once reading finishes.</p>
+          <div class="extract-canvas-wrap">
+            <canvas id="extractCanvas"></canvas>
+          </div>
+          <div class="extract-actions">
+            <button type="button" class="btn-portal-link" id="extractUsePhotoBtn">Use selection as photo</button>
+            <button type="button" class="btn-portal-link" id="extractClearBtn">Start over</button>
+            <span id="extractOcrStatus" class="extract-ocr-status"></span>
+          </div>
+          <div id="extractSuggestions" class="extract-suggestions"></div>
+        </div>
+      </div>
       <label class="field-label">Address / label
         <input type="text" id="propAddress" required placeholder="12 Example Street, Townville">
       </label>
@@ -469,6 +514,9 @@
       </label>
       <label class="field-label">Listing link (Rightmove / Zoopla)
         <input type="url" id="propLink" placeholder="https://www.rightmove.co.uk/...">
+      </label>
+      <label class="field-label">Price
+        <input type="text" id="propPrice" placeholder="e.g. £450,000 or Offers over £450,000">
       </label>
       <div class="field-row">
         <label class="field-label">Viewing date (leave blank if not booked yet)
@@ -1658,6 +1706,230 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
     }
   });
 
+  // ================= Automated property data extraction (screenshot crop + OCR) =================
+  // Entirely client-side: the app never contacts Rightmove/Zoopla — it only reads an image the
+  // user already has (a screenshot they took). OCR runs locally via Tesseract.js (lazy-loaded from
+  // a CDN on first use); address/price are surfaced as editable suggestions, never auto-saved.
+  const extractDropzone = document.getElementById('extractDropzone');
+  const extractFileInput = document.getElementById('extractFileInput');
+  const extractWorkspace = document.getElementById('extractWorkspace');
+  const extractCanvas = document.getElementById('extractCanvas');
+  const extractCtx = extractCanvas.getContext('2d');
+  const extractUsePhotoBtn = document.getElementById('extractUsePhotoBtn');
+  const extractClearBtn = document.getElementById('extractClearBtn');
+  const extractOcrStatus = document.getElementById('extractOcrStatus');
+  const extractSuggestions = document.getElementById('extractSuggestions');
+
+  let extractImg = null;
+  let extractScale = 1;
+  let extractSel = null;
+  let extractDragStart = null;
+  let tesseractLoadPromise = null;
+
+  function readFileAsDataURL(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+  function resetExtractPanel(){
+    extractImg = null;
+    extractSel = null;
+    extractDragStart = null;
+    extractWorkspace.style.display = 'none';
+    extractDropzone.style.display = 'block';
+    extractSuggestions.innerHTML = '';
+    extractOcrStatus.textContent = '';
+    extractFileInput.value = '';
+  }
+  function redrawExtractCanvas(){
+    if (!extractImg) return;
+    extractCtx.clearRect(0, 0, extractCanvas.width, extractCanvas.height);
+    extractCtx.drawImage(extractImg, 0, 0, extractCanvas.width, extractCanvas.height);
+    if (extractSel && extractSel.w > 0 && extractSel.h > 0){
+      extractCtx.save();
+      extractCtx.fillStyle = 'rgba(0,0,0,.45)';
+      extractCtx.fillRect(0, 0, extractCanvas.width, extractCanvas.height);
+      extractCtx.clearRect(extractSel.x, extractSel.y, extractSel.w, extractSel.h);
+      extractCtx.drawImage(
+        extractImg,
+        extractSel.x * extractScale, extractSel.y * extractScale, extractSel.w * extractScale, extractSel.h * extractScale,
+        extractSel.x, extractSel.y, extractSel.w, extractSel.h
+      );
+      extractCtx.strokeStyle = '#C9A66B';
+      extractCtx.lineWidth = 2;
+      extractCtx.strokeRect(extractSel.x, extractSel.y, extractSel.w, extractSel.h);
+      extractCtx.restore();
+    }
+  }
+  function loadExtractImage(dataUrl){
+    const img = new Image();
+    img.onload = () => {
+      extractImg = img;
+      extractSel = null;
+      const maxDisplayW = 440;
+      extractScale = img.width > maxDisplayW ? img.width / maxDisplayW : 1;
+      extractCanvas.width = Math.round(img.width / extractScale);
+      extractCanvas.height = Math.round(img.height / extractScale);
+      redrawExtractCanvas();
+      extractDropzone.style.display = 'none';
+      extractWorkspace.style.display = 'block';
+      extractSuggestions.innerHTML = '';
+      runExtractOcr(dataUrl);
+    };
+    img.onerror = () => { alert('Could not read that image.'); };
+    img.src = dataUrl;
+  }
+  function canvasPos(e){
+    const rect = extractCanvas.getBoundingClientRect();
+    const scaleX = extractCanvas.width / rect.width;
+    const scaleY = extractCanvas.height / rect.height;
+    return {
+      x: Math.max(0, Math.min(extractCanvas.width, (e.clientX - rect.left) * scaleX)),
+      y: Math.max(0, Math.min(extractCanvas.height, (e.clientY - rect.top) * scaleY)),
+    };
+  }
+  extractCanvas.addEventListener('pointerdown', (e) => {
+    if (!extractImg) return;
+    extractCanvas.setPointerCapture(e.pointerId);
+    extractDragStart = canvasPos(e);
+    extractSel = { x: extractDragStart.x, y: extractDragStart.y, w: 0, h: 0 };
+  });
+  extractCanvas.addEventListener('pointermove', (e) => {
+    if (!extractDragStart) return;
+    const p = canvasPos(e);
+    extractSel = {
+      x: Math.min(extractDragStart.x, p.x), y: Math.min(extractDragStart.y, p.y),
+      w: Math.abs(p.x - extractDragStart.x), h: Math.abs(p.y - extractDragStart.y),
+    };
+    redrawExtractCanvas();
+  });
+  extractCanvas.addEventListener('pointerup', () => { extractDragStart = null; });
+
+  extractUsePhotoBtn.addEventListener('click', () => {
+    if (!extractImg) return;
+    const sel = (extractSel && extractSel.w > 4 && extractSel.h > 4)
+      ? extractSel
+      : { x: 0, y: 0, w: extractCanvas.width, h: extractCanvas.height };
+    const sx = sel.x * extractScale, sy = sel.y * extractScale;
+    const sw = sel.w * extractScale, sh = sel.h * extractScale;
+    const maxDim = 640;
+    let outW = sw, outH = sh;
+    if (outW > outH && outW > maxDim){ outH = Math.round(outH * maxDim / outW); outW = maxDim; }
+    else if (outH >= outW && outH > maxDim){ outW = Math.round(outW * maxDim / outH); outH = maxDim; }
+    const out = document.createElement('canvas');
+    out.width = outW; out.height = outH;
+    out.getContext('2d').drawImage(extractImg, sx, sy, sw, sh, 0, 0, outW, outH);
+    pendingImageData = out.toDataURL('image/jpeg', 0.72);
+    propImageInput.value = '';
+    propImageInput.placeholder = 'Photo selected from screenshot — will replace any URL above';
+    updatePropImagePreview(pendingImageData);
+  });
+  extractClearBtn.addEventListener('click', resetExtractPanel);
+
+  extractDropzone.addEventListener('click', (e) => {
+    if (e.target.closest('label')) return; // the label's own click already opens the picker
+    extractFileInput.click();
+  });
+  extractDropzone.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); extractFileInput.click(); }
+  });
+  extractDropzone.addEventListener('dragover', (e) => { e.preventDefault(); extractDropzone.classList.add('dragover'); });
+  extractDropzone.addEventListener('dragleave', () => extractDropzone.classList.remove('dragover'));
+  extractDropzone.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    extractDropzone.classList.remove('dragover');
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) loadExtractImage(await readFileAsDataURL(file));
+  });
+  extractFileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (file) loadExtractImage(await readFileAsDataURL(file));
+  });
+  document.addEventListener('paste', async (e) => {
+    if (!propModalBackdrop.classList.contains('open')) return;
+    const items = (e.clipboardData && e.clipboardData.items) || [];
+    for (const item of items){
+      if (item.type && item.type.indexOf('image/') === 0){
+        const file = item.getAsFile();
+        if (file){ loadExtractImage(await readFileAsDataURL(file)); }
+        break;
+      }
+    }
+  });
+
+  function loadTesseract(){
+    if (window.Tesseract) return Promise.resolve();
+    if (tesseractLoadPromise) return tesseractLoadPromise;
+    tesseractLoadPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+    return tesseractLoadPromise;
+  }
+  const PRICE_RE = /(£\s?[\d][\d,]*(?:\.\d+)?|(?:offers over|guide price|oiro|poa|price on application|offers in (?:the )?region of|asking price)[^\n£]{0,20}£?\s?[\d,]*)/i;
+  function guessAddressLine(lines){
+    const bad = /^(rightmove|zoopla|save|share|book a viewing|added (today|yesterday|on)|marketed by|sold|let agreed|under offer|guide price|offers over|call|email|request details|floorplan|virtual tour|features|description|nearest stations?|council tax)/i;
+    let best = null;
+    for (const line of lines){
+      const t = line.trim();
+      if (t.length < 6 || t.length > 90) continue;
+      if (bad.test(t) || /£/.test(t)) continue;
+      const letters = (t.match(/[a-zA-Z]/g) || []).length;
+      if (letters < t.length * 0.5) continue;
+      if (!best || t.length > best.length) best = t;
+    }
+    return best;
+  }
+  async function runExtractOcr(dataUrl){
+    extractOcrStatus.textContent = 'Reading text… (first use downloads a recognition model, may take a few seconds)';
+    try{
+      await loadTesseract();
+      const result = await Tesseract.recognize(dataUrl, 'eng');
+      const text = result.data.text || '';
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      let addressGuess = null;
+      for (const line of lines){ if (UK_POSTCODE_RE.test(line)){ addressGuess = line; break; } }
+      if (!addressGuess) addressGuess = guessAddressLine(lines);
+      let priceGuess = null;
+      for (const line of lines){ const m = line.match(PRICE_RE); if (m){ priceGuess = line.trim(); break; } }
+      renderExtractSuggestions(addressGuess, priceGuess, text);
+      extractOcrStatus.textContent = '';
+    } catch(e){
+      extractOcrStatus.textContent = 'Could not read text from this image — you can still crop a photo and enter details manually.';
+    }
+  }
+  function renderExtractSuggestions(addressGuess, priceGuess, rawText){
+    const rows = [];
+    if (addressGuess){
+      rows.push('<div class="extract-suggestion"><span><span class="extract-suggestion-label">Address</span><span class="extract-suggestion-text">' + escapeHtml(addressGuess) + '</span></span><button type="button" class="extract-use-btn" data-target="propAddress" data-value="' + escapeAttr(addressGuess) + '">Use</button></div>');
+    }
+    if (priceGuess){
+      rows.push('<div class="extract-suggestion"><span><span class="extract-suggestion-label">Price</span><span class="extract-suggestion-text">' + escapeHtml(priceGuess) + '</span></span><button type="button" class="extract-use-btn" data-target="propPrice" data-value="' + escapeAttr(priceGuess) + '">Use</button></div>');
+    }
+    if (!rows.length){
+      rows.push('<p class="extract-hint" style="margin:0;">Couldn\'t confidently spot an address or price — check the raw text below.</p>');
+    }
+    rows.push('<button type="button" class="extract-raw-toggle" id="extractRawToggle">Show all extracted text</button>');
+    rows.push('<div class="extract-raw-text" id="extractRawText" style="display:none;">' + escapeHtml(rawText || '(no text found)') + '</div>');
+    extractSuggestions.innerHTML = rows.join('');
+    extractSuggestions.querySelectorAll('.extract-use-btn').forEach(btn => {
+      btn.addEventListener('click', () => { document.getElementById(btn.dataset.target).value = btn.dataset.value; });
+    });
+    const toggle = document.getElementById('extractRawToggle');
+    const rawEl = document.getElementById('extractRawText');
+    toggle.addEventListener('click', () => {
+      const showing = rawEl.style.display !== 'none';
+      rawEl.style.display = showing ? 'none' : 'block';
+      toggle.textContent = showing ? 'Show all extracted text' : 'Hide extracted text';
+    });
+  }
+
   async function loadProperties(){
     try{
       const res = await window.storage.get('properties', false);
@@ -1699,6 +1971,7 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
           '<h3 class="prop-address">' + escapeHtml(p.address) + '</h3>' +
           '<span class="prop-badge">' + sourceLabel(p.link) + '</span>' +
         '</div>' +
+        (p.price ? '<p class="prop-price">' + escapeHtml(p.price) + '</p>' : '') +
         postcodeLine +
         '<p class="prop-meta">Viewing: ' + when + '</p>' +
         statusBadge +
@@ -1765,11 +2038,13 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
     editingPropId = id || null;
     pendingImageData = null;
     propImageFileInput.value = '';
+    resetExtractPanel();
     const p = id ? properties.find(x => x.id === id) : null;
     propFormEyebrow.textContent = p ? 'Edit viewing' : 'Add viewing';
     document.getElementById('propAddress').value = p ? p.address : '';
     document.getElementById('propPostcode').value = p ? (p.postcode || '') : '';
     document.getElementById('propLink').value = p ? (p.link || '') : '';
+    document.getElementById('propPrice').value = p ? (p.price || '') : '';
     document.getElementById('propDate').value = p ? (p.date || '') : '';
     document.getElementById('propTime').value = p ? (p.time || '') : '';
     document.getElementById('propStatus').value = p ? (p.status || 'property-of-interest') : 'property-of-interest';
@@ -1791,6 +2066,7 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
     propModalBackdrop.classList.remove('open');
     editingPropId = null;
     pendingImageData = null;
+    resetExtractPanel();
   }
 
   document.getElementById('addPropertyBtn').addEventListener('click', () => openPropForm(null));
@@ -1816,6 +2092,7 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
       postcode: document.getElementById('propPostcode').value.trim().toUpperCase(),
       postcodeGuessed: false,
       link: document.getElementById('propLink').value.trim(),
+      price: document.getElementById('propPrice').value.trim(),
       date: document.getElementById('propDate').value,
       time: document.getElementById('propTime').value,
       status: document.getElementById('propStatus').value,
