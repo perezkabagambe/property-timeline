@@ -115,6 +115,32 @@ reverse lookup instead), so `applyNearestSchools` makes one extra `geocodePostco
 call to backfill the IMD rank in that case — cached by postcode, so it doesn't
 repeat on subsequent loads.
 
+**Nearest hospitals** — renders beside the IMD block (`.near-row`, a flex row
+inside the panel — the one exception to every other block stacking full-width).
+`window.HOSPITALS_DB` (~44KB, its own `<script>` tag after `STATIONS_DB`) holds
+750 English hospitals — name, postcode, lat/lon, same positional-array convention.
+Source: **CQC's locations directory** (`cqc.org.uk/about-us/transparency/using-cqc-data`,
+Open Government Licence, freshly dated CSV/ZIP regenerated regularly — re-fetch
+that page for a current link rather than reusing an old dated URL), filtered to
+`Service types` containing `Hospital` and deduped by name. That CQC tag is a
+regulatory category, not a strict definition of "hospital" — it's a good-enough
+proxy (spot-checked, mostly NHS trust/community/private hospitals) but a handful
+of edge cases (e.g. a specialist clinic) may be tagged Hospital too. Deliberately
+excludes the separate `Hospitals - Mental health/capacity` tag (698 more) — out
+of scope for "nearest hospital for something like an emergency," which is the
+assumed use case; revisit if that assumption is wrong. `p.nearestHospitals` is
+computed in `applyNearestSchools` exactly like stations (top 2 instead of top 3),
+same cache-by-postcode invalidation, same `hasFreshLocationData` gate.
+
+**Flexbox gotcha for `.near-row`**: its children need `min-width:0` (not just a
+small `min-width`) and the table inside needs `table-layout:fixed` — without
+both, the compact table's intrinsic content width fights the flex-basis and the
+two blocks wrap onto separate lines instead of sitting side by side, even when
+there's clearly enough space. Verified via computed `getBoundingClientRect()`
+(same `top` on both blocks), not a screenshot — this session's screenshot tool
+was unreliable (returned stale/blank frames repeatedly), so prefer geometry
+checks via `javascript_exec` over trusting a screenshot when verifying layout.
+
 **Property statuses:** Property of Interest (default for new entries) / Viewing
 Scheduled / Viewing Complete / Offer Made / Offer Rejected / Offer Accepted —
 a dropdown per property, shown as a colored badge.
