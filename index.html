@@ -273,6 +273,9 @@
   .prop-image-preview-error{font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:#7A2E1B;background:#F0D8C8;padding:6px 9px;border-radius:5px;margin:0;}
 
   .extract-panel{border:1px dashed rgba(0,0,0,.25);border-radius:8px;padding:12px;margin-bottom:16px;background:rgba(0,0,0,.02);}
+  .extract-source-toggle{display:flex;gap:14px;margin-bottom:10px;font-family:'Source Serif 4', serif;font-size:13px;color:var(--paper-ink);}
+  .extract-source-toggle label{display:flex;align-items:center;gap:5px;cursor:pointer;}
+  .extract-source-toggle input{margin:0;}
   .extract-dropzone{
     border:1px dashed rgba(0,0,0,.3);border-radius:6px;padding:16px;text-align:center;
     font-family:'Source Serif 4', serif;font-size:13px;color:var(--paper-ink-dim);cursor:pointer;
@@ -405,7 +408,7 @@
     <div id="propsStatus" class="props-status">Loading saved viewings…</div>
     <div id="propsList"></div>
   </section>
-  <footer class="app-footer">Build: 22 Jul 2026, 00:38 UTC</footer>
+  <footer class="app-footer">Build: 22 Jul 2026, 15:56 UTC</footer>
 </div>
 
 <div class="modal-backdrop" id="taskModalBackdrop">
@@ -494,6 +497,10 @@
     <form id="propForm">
       <div class="extract-panel">
         <p class="field-label" style="margin-top:0;">Automated Property Data Extraction</p>
+        <div class="extract-source-toggle" id="extractSourceToggle">
+          <label><input type="radio" name="extractSource" value="rightmove" checked> Rightmove</label>
+          <label><input type="radio" name="extractSource" value="zoopla"> Zoopla</label>
+        </div>
         <div id="extractDropzone" class="extract-dropzone" tabindex="0">
           <p>Paste a listing screenshot (Ctrl/Cmd+V), drop an image here, or
             <label class="extract-browse">choose a file<input type="file" id="extractFileInput" accept="image/*" style="display:none;"></label>
@@ -1881,10 +1888,10 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
   const PRICE_MONEY_RE = /£\s?[\d][\d,]*(?:\.\d+)?/;
   const PRICE_QUALIFIER_RE = /^(offers over|guide price|oiro|poa|price on application|offers in (?:the )?region of|asking price|fixed price|shared ownership|from)\b/i;
   function guessPriceLine(lines){
-    // Anchor on the line with the actual £ amount — Rightmove/Zoopla often put a bare
-    // qualifier ("Guide Price") on its own line above the number, so stitch them together
-    // rather than risk grabbing just the qualifier with no figure.
-    for (let i = 0; i < lines.length; i++){
+    // Scan from the END backward: the real listing info block is always the tail of the OCR
+    // output (the photo — and any noise Tesseract hallucinates out of its texture — always
+    // precedes it), so anchoring near the end avoids landing on a stray early false match.
+    for (let i = lines.length - 1; i >= 0; i--){
       const line = lines[i];
       if (!PRICE_MONEY_RE.test(line)) continue;
       const prev = lines[i - 1] ? lines[i - 1].trim() : '';
@@ -1893,36 +1900,52 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
       }
       return line.trim();
     }
-    // No £ amount anywhere — a bare qualifier line (e.g. "POA") is still worth surfacing.
-    for (const line of lines){ if (PRICE_QUALIFIER_RE.test(line.trim())) return line.trim(); }
+    for (let i = lines.length - 1; i >= 0; i--){ if (PRICE_QUALIFIER_RE.test(lines[i].trim())) return lines[i].trim(); }
     return null;
   }
-  function guessAddressLine(lines){
+  function isPlausibleTextLine(t){
     // OCR run over a whole screenshot (not just the text strip) frequently hallucinates
     // fragmented, text-like noise out of photo textures — brick, roof tiles, foliage. That
     // noise is short, punctuation-heavy, and full of 1-2 letter fragments, so filter hard
     // against those shapes rather than just checking length/letter-ratio.
+    if (!t) return false;
+    t = t.trim();
+    if (t.length < 6 || t.length > 90) return false;
+    if (/£/.test(t)) return false;
+    if (/[_~^`|{}\[\]<>]/.test(t)) return false; // punctuation that essentially never appears in a real address — a strong noise signal
+    const words = t.split(/\s+/).filter(Boolean);
+    if (words.length < 2) return false; // a real address line is normally multiple words
+    const letters = (t.match(/[a-zA-Z]/g) || []).length;
+    if (letters < t.length * 0.7) return false;
+    const shortFrags = words.filter(w => w.replace(/[^a-zA-Z]/g, '').length <= 2).length;
+    if (shortFrags / words.length > 0.34) return false; // too many tiny fragments = garbled noise, not real words
+    const noVowelWord = words.some(w => {
+      const letters2 = w.replace(/[^a-zA-Z]/g, '');
+      return letters2.length >= 3 && !/[aeiouAEIOU]/.test(letters2);
+    });
+    if (noVowelWord) return false; // a 3+ letter "word" with zero vowels is essentially never real English
+    return true;
+  }
+  function guessAddressLine(lines){
     const bad = /^(rightmove|zoopla|save|share|book a viewing|added (today|yesterday|on)|marketed by|sold|let agreed|under offer|guide price|offers over|call|email|request details|floorplan|virtual tour|features|description|nearest stations?|council tax)/i;
     let best = null;
     for (const line of lines){
       const t = line.trim();
-      if (t.length < 6 || t.length > 90) continue;
-      if (bad.test(t) || /£/.test(t)) continue;
-      if (/[_~^`|{}\[\]<>]/.test(t)) continue; // punctuation that essentially never appears in a real address — a strong noise signal
-      const words = t.split(/\s+/).filter(Boolean);
-      if (words.length < 2) continue; // a real address line is normally multiple words
-      const letters = (t.match(/[a-zA-Z]/g) || []).length;
-      if (letters < t.length * 0.7) continue;
-      const shortFrags = words.filter(w => w.replace(/[^a-zA-Z]/g, '').length <= 2).length;
-      if (shortFrags / words.length > 0.34) continue; // too many tiny fragments = garbled noise, not real words
-      const noVowelWord = words.some(w => {
-        const letters2 = w.replace(/[^a-zA-Z]/g, '');
-        return letters2.length >= 3 && !/[aeiouAEIOU]/.test(letters2);
-      });
-      if (noVowelWord) continue; // a 3+ letter "word" with zero vowels is essentially never real English
+      if (bad.test(t)) continue;
+      if (!isPlausibleTextLine(t)) continue;
       if (!best || t.length > best.length) best = t;
     }
     return best;
+  }
+  function guessAddressPositional(lines, source){
+    // Calibrated against real screenshots from each portal — the actual info block is always
+    // the last few OCR lines, in a fixed order per site (garbage from the photo precedes it):
+    //   Rightmove (from the end): [-3] address, [-2] price qualifier, [-1] £ amount.
+    //   Zoopla (from the end):    [-1] address, [-2] bed/bath count, [-3] filler, [-4] £ amount.
+    const idx = source === 'zoopla' ? lines.length - 1 : lines.length - 3;
+    if (idx < 0 || idx >= lines.length) return null;
+    const candidate = lines[idx].trim();
+    return isPlausibleTextLine(candidate) ? candidate : null;
   }
   async function runExtractOcr(dataUrl){
     extractOcrStatus.textContent = 'Reading text… (first use downloads a recognition model, may take a few seconds)';
@@ -1931,9 +1954,15 @@ window.SCHOOLS_DB = {"meta":{"primaryCols":["name","postcode","lat","lon","rank"
       const result = await Tesseract.recognize(dataUrl, 'eng');
       const text = result.data.text || '';
       const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-      let addressGuess = null;
-      for (const line of lines){ if (UK_POSTCODE_RE.test(line)){ addressGuess = line; break; } }
+      const sourceInput = document.querySelector('input[name="extractSource"]:checked');
+      const source = sourceInput ? sourceInput.value : 'rightmove';
+
+      let addressGuess = guessAddressPositional(lines, source);
+      if (!addressGuess){
+        for (const line of lines){ if (UK_POSTCODE_RE.test(line)){ addressGuess = line.trim(); break; } }
+      }
       if (!addressGuess) addressGuess = guessAddressLine(lines);
+
       const priceGuess = guessPriceLine(lines);
       renderExtractSuggestions(addressGuess, priceGuess, text);
       extractOcrStatus.textContent = '';

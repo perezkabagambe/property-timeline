@@ -98,12 +98,34 @@ doesn't implicate the scraping-ToS restriction above). Two independent pieces:
   logic unchanged.
 - **Address/price**: OCR via **Tesseract.js**, lazy-loaded from a CDN
   (`loadTesseract`) only when an image is first provided — this is the one real
-  external dependency in the app beyond Google's own sign-in script. Extracted
-  text is pattern-matched (`PRICE_RE`, `guessAddressLine`, and a priority check
-  against `UK_POSTCODE_RE`) into suggestion chips the user must click "Use" to
-  apply — OCR is never auto-applied to the form fields, since accuracy on
-  arbitrary screenshots is inherently best-effort, not reliable enough to trust
-  silently.
+  external dependency in the app beyond Google's own sign-in script.
+
+  A **Rightmove/Zoopla source toggle** (`extractSourceToggle`, defaults to
+  Rightmove) drives **positional** extraction as the primary strategy:
+  `guessAddressPositional` picks a fixed line offset from the *end* of the OCR
+  output, because the real listing info block is always the tail of the text —
+  the photo is always at the top of the screenshot, so any noise Tesseract
+  hallucinates out of its texture (a real, common failure — fragmented
+  letter-like garbage from brick/tile/foliage patterns) always precedes it.
+  Content-based heuristics alone (`isPlausibleTextLine`'s length/punctuation/
+  vowel checks) turned out to *not* be reliable enough on their own — garbled
+  OCR output can still accidentally look word-shaped enough to pass a generic
+  quality filter, so position is now load-bearing, not just a tiebreaker:
+    - Rightmove (from the end): `[-3]` address, `[-2]` price qualifier, `[-1]` £ amount.
+    - Zoopla (from the end): `[-1]` address, `[-2]` bed/bath count, `[-3]` filler, `[-4]` £ amount.
+  The Rightmove offsets are confirmed against real screenshots (including a
+  real garbage OCR dump a user pasted back). **The Zoopla offsets are only an
+  interpretation of a user's verbal description, not yet confirmed against a
+  real Zoopla screenshot** — if a user reports it's picking the wrong line,
+  get an actual raw-OCR-text dump (the "Show all extracted text" toggle in the
+  panel) from them and recalibrate the offset, the same way the Rightmove one
+  was fixed.
+  `isPlausibleTextLine` still gates the positional pick (and remains the
+  fallback path via `guessAddressLine` if position fails or a source wasn't
+  matched) and `guessPriceLine` scans for the £ amount from the end backward
+  for the same reason. Suggestions are never auto-applied to the form fields —
+  the user must click "Use" — since accuracy on arbitrary screenshots is
+  inherently best-effort, not reliable enough to trust silently.
 
 `resetExtractPanel()` runs on both opening and closing the property modal so
 stale image/suggestion state never leaks between add/edit sessions.
