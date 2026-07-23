@@ -79,9 +79,33 @@ matters most during `backfillAllPropertySchools`, which does the same resolution
 for every existing property on load and after a Drive sync merge. Changing
 `p.postcode` (confirming or correcting a guess) always invalidates and recomputes
 `p.nearestSchools` — the cache key is the resolved postcode string. Two sortable
-tables (primary above secondary) render in a `.prop-schools-panel` beside the
-card, inside a `.prop-row` flex container — replaced the old `.props-grid`
-card-only layout.
+tables render side by side in a `.schools-row` (primary left, secondary right —
+`renderNearTable`'s colgroup gives the name column a fixed 40% so `table-layout:
+fixed` doesn't starve it once the table is sharing a row), inside a
+`.prop-schools-panel` beside the card, inside a `.prop-row` flex container —
+replaced the old `.props-grid` card-only layout. IMD renders directly beneath
+primary and hospitals directly beneath secondary (a second `.near-row` right
+after `.schools-row`, same two-column widths) — stations stays full-width, last.
+On narrow viewports `.near-row` wraps to a single column, so the stacked mobile
+order is exactly: property card, primary, secondary, IMD, hospitals, stations.
+A shared `near-status` note above `.schools-row` clarifies that National Rank
+can be tied across several schools with an identical score (verified: 63 primary
+schools nationally are tied at rank #1 with 100% KS2 RWM, per `SCHOOLS_DB` —
+`rank(method='min')` in the build script deliberately gives ties the same,
+lowest rank rather than spreading them out).
+
+**Properties overview strip** (`renderPropsOverview`, `#propsOverviewAnchor`) —
+a wide, horizontally-scrollable summary table at the very top of the Properties
+section, one column per property (both unscheduled and scheduled combined, same
+order they render in below): row 1 thumbnail, row 2 price, row 3 status badge.
+Read-only — pulled live from `properties` on every render, no inputs. Clicking a
+thumbnail (`onclick="scrollToProperty(id)"`, needs `window.` scope like the
+`sortNearSchools` pattern) scrolls to that property's `.prop-row` (given a
+`#prop-row-<id>` DOM id specifically for this). Every property card has a
+"↑ Top" button (`.btn-back-top`, wired via `addEventListener` since it sits
+alongside the existing `.btn-edit` in the same `.prop-actions` row — don't
+reuse `.btn-edit` as a class on both or `querySelector('.btn-edit')` breaks)
+that scrolls back to `#propsOverviewAnchor`.
 
 Postcode isn't the only thing that can make cached results stale, though — the
 nearest-N counts, ranking logic, or an embedded dataset can also change without

@@ -179,6 +179,24 @@
   .btn-portal-link:hover{color:var(--ink);border-color:var(--ink-dim);}
   .props-note{font-size:11.5px;color:var(--ink-dim);margin:0 0 16px;max-width:64ch;line-height:1.5;}
   .props-status{font-size:12.5px;color:var(--ink-dim);padding:10px 0;}
+  .props-overview-wrap{overflow-x:auto;border:1px solid var(--grid-strong);border-radius:8px;margin-bottom:22px;background:rgba(255,255,255,.02);}
+  .props-overview{border-collapse:collapse;}
+  .props-overview td{padding:8px;border-bottom:1px solid var(--grid);vertical-align:middle;}
+  .props-overview tr:last-child td{border-bottom:none;}
+  .props-overview-thumb-btn{
+    display:block;width:96px;height:64px;border-radius:5px;overflow:hidden;border:1px solid var(--grid-strong);
+    background:#DDD3BE;padding:0;cursor:pointer;flex:none;
+  }
+  .props-overview-thumb-btn img{width:100%;height:100%;object-fit:cover;display:block;}
+  .props-overview-thumb-btn:hover{outline:2px solid var(--caution);outline-offset:1px;}
+  .props-overview-noimg{
+    display:flex;align-items:center;justify-content:center;width:100%;height:100%;
+    font-family:'IBM Plex Mono', monospace;font-size:9px;color:#6b5f47;text-align:center;padding:2px;
+  }
+  .props-overview-price-cell{font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:var(--ink);white-space:nowrap;text-align:center;}
+  .props-overview-status-cell{text-align:center;white-space:nowrap;}
+  .btn-back-top{background:none;border:1px solid var(--paper-ink-dim);color:var(--paper-ink);font-family:'IBM Plex Mono', monospace;font-size:11px;padding:5px 10px;border-radius:4px;cursor:pointer;}
+  .btn-back-top:hover{background:rgba(0,0,0,.06);}
   .props-subheading{
     font-family:'IBM Plex Mono', monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
     color:var(--ink-dim);margin:18px 0 10px;padding-top:14px;border-top:1px dashed var(--grid-strong);
@@ -188,7 +206,7 @@
   .prop-row{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;}
   .prop-row .prop-card{flex:0 0 300px;width:300px;}
   .prop-schools-panel{
-    flex:0 1 460px;min-width:280px;max-width:480px;display:flex;flex-direction:column;gap:12px;
+    flex:1 1 460px;min-width:280px;max-width:860px;display:flex;flex-direction:column;gap:12px;
     background:var(--paper);color:var(--paper-ink);border-radius:8px;padding:14px 16px;box-shadow:0 4px 14px rgba(0,0,0,.28);
   }
   @media (max-width: 760px){
@@ -243,6 +261,7 @@
   .near-row .near-block{flex:1 1 180px;min-width:0;}
   .near-row .near-table{width:100%;table-layout:fixed;}
   .near-row .near-table td:first-child, .near-row .near-table th:first-child{white-space:normal;word-break:break-word;}
+  .schools-row .near-block{flex:1 1 300px;}
   .near-status{font-size:12px;color:var(--paper-ink-dim);font-family:'Source Serif 4', serif;margin:0;}
   .near-guess-note{font-size:11.5px;color:#7A5B12;background:#F5E6C8;border-radius:5px;padding:6px 9px;margin:0;font-family:'Source Serif 4', serif;}
 
@@ -420,7 +439,7 @@
     <div id="propsStatus" class="props-status">Loading saved viewings…</div>
     <div id="propsList"></div>
   </section>
-  <footer class="app-footer">Build: 23 Jul 2026, 07:49 UTC</footer>
+  <footer class="app-footer">Build: 23 Jul 2026, 20:50 UTC</footer>
 </div>
 
 <div class="modal-backdrop" id="taskModalBackdrop">
@@ -1792,7 +1811,14 @@ window.HOSPITALS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":75
       tds += '<td>' + r.distance.toFixed(1) + ' mi</td>';
       return '<tr>' + tds + '</tr>';
     }).join('');
-    return open('<table class="near-table"><thead><tr>' + head + '</tr></thead><tbody>' + bodyRows + '</tbody></table>');
+    // Explicit column proportions so the table stays readable once it's sharing a row with
+    // its counterpart (table-layout:fixed needs these — it can't infer them from content).
+    const nameW = 40, distW = 15;
+    const restW = ((100 - nameW - distW) / measureCols.length).toFixed(1);
+    const colgroup = '<colgroup><col style="width:' + nameW + '%">' +
+      measureCols.map(() => '<col style="width:' + restW + '%">').join('') +
+      '<col style="width:' + distW + '%"></colgroup>';
+    return open('<table class="near-table">' + colgroup + '<thead><tr>' + head + '</tr></thead><tbody>' + bodyRows + '</tbody></table>');
   }
   function renderStationsTable(p){
     const open = (html) => '<div class="near-block"><h4>Nearest train stations</h4>' + html + '</div>';
@@ -2221,15 +2247,26 @@ window.HOSPITALS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":75
         warn +
         (p.link ? '<a class="prop-link" href="' + escapeAttr(p.link) + '" target="_blank" rel="noopener">View listing ↗</a>' : '') +
         '<p class="prop-comments-display">' + (p.comments ? escapeHtml(p.comments) : 'No notes yet.') + '</p>' +
-        '<div class="prop-actions"><button class="btn-edit">Edit</button></div>' +
+        '<div class="prop-actions"><button type="button" class="btn-back-top">↑ Top</button><button class="btn-edit">Edit</button></div>' +
       '</div>';
     card.querySelector('.btn-edit').addEventListener('click', () => openPropForm(p.id));
+    card.querySelector('.btn-back-top').addEventListener('click', scrollToPropsTop);
     return card;
   }
+
+  function scrollToPropsTop(){
+    const el = document.getElementById('propsOverviewAnchor');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  window.scrollToProperty = function(id){
+    const el = document.getElementById('prop-row-' + id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   function buildPropRow(p){
     const row = document.createElement('div');
     row.className = 'prop-row';
+    row.id = 'prop-row-' + p.id;
     row.appendChild(buildPropCard(p));
     const panel = document.createElement('div');
     panel.className = 'prop-schools-panel';
@@ -2239,10 +2276,35 @@ window.HOSPITALS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":75
         (p.nearestSchools.postcode ? ' as <strong>' + escapeHtml(p.nearestSchools.postcode) + '</strong>' : '') +
         ' from the address — open Edit to correct it once you know the exact one.</p>';
     }
-    panel.innerHTML = guessNote + renderNearTable(p, 'primary') + renderNearTable(p, 'secondary') + renderStationsTable(p) +
-      '<div class="near-row">' + renderImdBlock(p) + renderHospitalsTable(p) + '</div>';
+    const tieNote = '<p class="near-status">National rank can be shared by several schools with an identical score — ' +
+      '"#1" means tied for the best, not necessarily unique.</p>';
+    panel.innerHTML = guessNote + tieNote +
+      '<div class="near-row schools-row">' + renderNearTable(p, 'primary') + renderNearTable(p, 'secondary') + '</div>' +
+      '<div class="near-row">' + renderImdBlock(p) + renderHospitalsTable(p) + '</div>' +
+      renderStationsTable(p);
     row.appendChild(panel);
     return row;
+  }
+
+  function renderPropsOverview(allProps){
+    const wrap = document.createElement('div');
+    wrap.className = 'props-overview-wrap';
+    wrap.id = 'propsOverviewAnchor';
+    const thumbs = allProps.map(p => {
+      const inner = p.image
+        ? '<img src="' + escapeAttr(p.image) + '" alt="' + escapeAttr(p.address) + '" onerror="handleImgError(this)">'
+        : '<span class="props-overview-noimg">No photo</span>';
+      return '<td><button type="button" class="props-overview-thumb-btn" onclick="scrollToProperty(\'' + p.id + '\')" title="Jump to: ' + escapeAttr(p.address) + '">' + inner + '</button></td>';
+    }).join('');
+    const prices = allProps.map(p => '<td class="props-overview-price-cell">' + (p.price ? escapeHtml(p.price) : '—') + '</td>').join('');
+    const statuses = allProps.map(p => '<td class="props-overview-status-cell">' +
+      (p.status ? '<span class="prop-status-badge ' + p.status + '">' + STATUS_LABELS[p.status] + '</span>' : '—') + '</td>').join('');
+    wrap.innerHTML = '<table class="props-overview"><tbody>' +
+      '<tr class="props-overview-thumbs">' + thumbs + '</tr>' +
+      '<tr class="props-overview-price">' + prices + '</tr>' +
+      '<tr class="props-overview-status">' + statuses + '</tr>' +
+      '</tbody></table>';
+    return wrap;
   }
 
   function renderProperties(){
@@ -2255,6 +2317,8 @@ window.HOSPITALS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":75
     propsStatus.style.display = 'none';
     const unscheduled = properties.filter(p => !p.date);
     const scheduled = properties.filter(p => p.date).sort((a, b) => a.date.localeCompare(b.date));
+
+    propsList.appendChild(renderPropsOverview(unscheduled.concat(scheduled)));
 
     if (unscheduled.length){
       const h = document.createElement('h3');
