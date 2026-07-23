@@ -439,7 +439,7 @@
     <div id="propsStatus" class="props-status">Loading saved viewings…</div>
     <div id="propsList"></div>
   </section>
-  <footer class="app-footer">Build: 23 Jul 2026, 20:50 UTC</footer>
+  <footer class="app-footer">Build: 23 Jul 2026, 21:24 UTC</footer>
 </div>
 
 <div class="modal-backdrop" id="taskModalBackdrop">
@@ -2280,8 +2280,7 @@ window.HOSPITALS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":75
       '"#1" means tied for the best, not necessarily unique.</p>';
     panel.innerHTML = guessNote + tieNote +
       '<div class="near-row schools-row">' + renderNearTable(p, 'primary') + renderNearTable(p, 'secondary') + '</div>' +
-      '<div class="near-row">' + renderImdBlock(p) + renderHospitalsTable(p) + '</div>' +
-      renderStationsTable(p);
+      '<div class="near-row">' + renderImdBlock(p) + renderStationsTable(p) + renderHospitalsTable(p) + '</div>';
     row.appendChild(panel);
     return row;
   }
