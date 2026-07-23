@@ -420,7 +420,7 @@
     <div id="propsStatus" class="props-status">Loading saved viewings…</div>
     <div id="propsList"></div>
   </section>
-  <footer class="app-footer">Build: 22 Jul 2026, 22:12 UTC</footer>
+  <footer class="app-footer">Build: 23 Jul 2026, 07:21 UTC</footer>
 </div>
 
 <div class="modal-backdrop" id="taskModalBackdrop">
@@ -1609,8 +1609,8 @@ window.HOSPITALS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":75
     return Math.min(10, Math.max(1, Math.ceil(rank / (IMD_TOTAL_LSOAS / 10))));
   }
   async function applyNearestSchools(p, postcode, coords, guessed){
-    const nearPrimary = nearestFromDb(coords.lat, coords.lon, window.SCHOOLS_DB.primary, 5);
-    const nearSecondary = nearestFromDb(coords.lat, coords.lon, window.SCHOOLS_DB.secondary, 5);
+    const nearPrimary = nearestFromDb(coords.lat, coords.lon, window.SCHOOLS_DB.primary, 10);
+    const nearSecondary = nearestFromDb(coords.lat, coords.lon, window.SCHOOLS_DB.secondary, 10);
     p.postcode = postcode;
     p.postcodeGuessed = guessed;
     p.nearestSchools = {
