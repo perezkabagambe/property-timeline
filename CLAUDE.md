@@ -83,6 +83,17 @@ tables (primary above secondary) render in a `.prop-schools-panel` beside the
 card, inside a `.prop-row` flex container — replaced the old `.props-grid`
 card-only layout.
 
+Postcode isn't the only thing that can make cached results stale, though — the
+nearest-N counts, ranking logic, or an embedded dataset can also change without
+any property's postcode changing (e.g. bumping primary/secondary schools from 5
+to 10). `LOCATION_DATA_VERSION` exists for exactly that: `hasFreshLocationData`
+requires `nearestSchools`/`nearestStations`/`nearestHospitals` to carry a
+matching `version` stamp, not just a matching postcode, before treating them as
+fresh. Bump this constant whenever changing what/how many get computed — every
+property then recomputes once automatically on next load via the existing
+backfill, no manual re-save needed. `p.imd` isn't versioned since nothing about
+its computation is parameterised the same way.
+
 This replaced an earlier, deliberately-manual Snobe.co.uk-based design (Snobe's ToS
 prohibits automated scraping of their rankings). The DfE data above is a different,
 openly-licensed source, so that restriction doesn't apply here — but the Snobe ToS

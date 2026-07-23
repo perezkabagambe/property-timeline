@@ -420,7 +420,7 @@
     <div id="propsStatus" class="props-status">Loading saved viewings…</div>
     <div id="propsList"></div>
   </section>
-  <footer class="app-footer">Build: 23 Jul 2026, 07:21 UTC</footer>
+  <footer class="app-footer">Build: 23 Jul 2026, 07:49 UTC</footer>
 </div>
 
 <div class="modal-backdrop" id="taskModalBackdrop">
@@ -1608,6 +1608,12 @@ window.HOSPITALS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":75
   function imdDecileFromRank(rank){
     return Math.min(10, Math.max(1, Math.ceil(rank / (IMD_TOTAL_LSOAS / 10))));
   }
+  // Bump this whenever the nearest-N counts, ranking logic, or embedded datasets change in a
+  // way that should refresh already-cached results even though the property's postcode hasn't
+  // changed (e.g. going from 5 to 10 nearest schools). hasFreshLocationData compares against
+  // this, so every property recomputes once on next load instead of being stuck on stale data
+  // forever — the same class of bug as IMD never backfilling on older properties.
+  const LOCATION_DATA_VERSION = 2;
   async function applyNearestSchools(p, postcode, coords, guessed){
     const nearPrimary = nearestFromDb(coords.lat, coords.lon, window.SCHOOLS_DB.primary, 10);
     const nearSecondary = nearestFromDb(coords.lat, coords.lon, window.SCHOOLS_DB.secondary, 10);
@@ -1615,6 +1621,7 @@ window.HOSPITALS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":75
     p.postcodeGuessed = guessed;
     p.nearestSchools = {
       postcode: postcode,
+      version: LOCATION_DATA_VERSION,
       primary: nearPrimary.map(x => ({ name: x.row[0], rank: x.row[4], ks2: x.row[5], distance: x.distance })),
       secondary: nearSecondary.map(x => ({ name: x.row[0], rank: x.row[4], progress8: x.row[5], attainment8: x.row[6], distance: x.distance })),
     };
@@ -1622,6 +1629,7 @@ window.HOSPITALS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":75
       const nearStations = nearestFromDb(coords.lat, coords.lon, window.STATIONS_DB.stations, 3);
       p.nearestStations = {
         postcode: postcode,
+        version: LOCATION_DATA_VERSION,
         stations: nearStations.map(x => ({ name: x.row[0], distance: x.distance })),
       };
     }
@@ -1629,6 +1637,7 @@ window.HOSPITALS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":75
       const nearHospitals = nearestFromDb(coords.lat, coords.lon, window.HOSPITALS_DB.hospitals, 2);
       p.nearestHospitals = {
         postcode: postcode,
+        version: LOCATION_DATA_VERSION,
         hospitals: nearHospitals.map(x => ({ name: x.row[0], distance: x.distance })),
       };
     }
@@ -1651,7 +1660,10 @@ window.HOSPITALS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":75
   // pipeline forever and that field would never backfill.
   function hasFreshLocationData(p, normalizedPc){
     const fresh = (obj) => obj && obj.postcode === normalizedPc && !obj.error;
-    return fresh(p.nearestSchools) && fresh(p.nearestStations) && fresh(p.nearestHospitals) && fresh(p.imd);
+    // Schools/stations/hospitals also carry a version stamp, since their nearest-N counts and
+    // ranking logic can change without the postcode changing (see LOCATION_DATA_VERSION).
+    const freshVersioned = (obj) => fresh(obj) && obj.version === LOCATION_DATA_VERSION;
+    return freshVersioned(p.nearestSchools) && freshVersioned(p.nearestStations) && freshVersioned(p.nearestHospitals) && fresh(p.imd);
   }
   async function ensurePropertySchools(propId){
     const p = properties.find(x => x.id === propId);
@@ -1722,8 +1734,11 @@ window.HOSPITALS_DB = {"meta":{"cols":["name","postcode","lat","lon"],"total":75
       if (enteredPostcode){
         const normalizedPc = enteredPostcode.toUpperCase().replace(/\s+/g, ' ').trim();
         if (hasFreshLocationData(p, normalizedPc)) return;
-      } else if (p.nearestSchools && !p.nearestSchools.error && p.nearestStations && !p.nearestStations.error && p.nearestHospitals && !p.nearestHospitals.error && p.imd && !p.imd.error){
-        return; // already have a best-guess result and nothing's changed
+      } else {
+        const versionOk = (obj) => obj && !obj.error && obj.version === LOCATION_DATA_VERSION;
+        if (versionOk(p.nearestSchools) && versionOk(p.nearestStations) && versionOk(p.nearestHospitals) && p.imd && !p.imd.error){
+          return; // already have a best-guess result and nothing's changed
+        }
       }
       ensurePropertySchools(p.id);
     });
